@@ -19,10 +19,10 @@ mongoose
 		console.log('✅ Connected to MongoDB');
 
 		// Seed sample data if missing (optional)
-		const Course = require('./models/Course');
-		const Assignment = require('./models/Assignment');
-		const Exam = require('./models/Exam');
-		const Student = require('./models/Student');
+		const Course = require('./src/models/Course');
+		const Assignment = require('./src/models/Assignment');
+		const Exam = require('./src/models/Exam');
+		const Student = require('./src/models/Student');
 
 		const courseCount = await Course.countDocuments();
 		if (courseCount === 0) {
@@ -116,14 +116,14 @@ mongoose
 	.catch((err) => console.error('❌ MongoDB connection error:', err));
 
 // API routes
-app.use('/api/courses', require('./routes/courses'));
-app.use('/api/assignments', require('./routes/assignments'));
-app.use('/api/exams', require('./routes/exams'));
-app.use('/api/students', require('./routes/students'));
-app.use('/api/storage', require('./routes/storage'));
+app.use('/api/courses', require('./src/routes/courses'));
+app.use('/api/assignments', require('./src/routes/assignments'));
+app.use('/api/exams', require('./src/routes/exams'));
+app.use('/api/students', require('./src/routes/students'));
+app.use('/api/storage', require('./src/routes/storage'));
 
 // Serve frontend static files
-const frontendPath = path.join(__dirname, '..', '..', 'frontend', 'instructor-dashboard');
+const frontendPath = path.join(__dirname, '..', 'Frontend', 'instructor-dashboard');
 app.use(express.static(frontendPath));
 
 // Ensure SPA routing works (Catch-all route)

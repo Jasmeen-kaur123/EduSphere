@@ -1,6 +1,5 @@
 // dashboard.js - Handles dynamic dashboard stats rendering using localStorage
 
-
 // Helper to call backend APIs
 async function apiFetch(path, options = {}) {
     try {
@@ -24,16 +23,23 @@ async function apiFetch(path, options = {}) {
 
 async function renderDashboardStats() {
     // Fetch counts from backend
-    const [courses, assignments, exams] = await Promise.all([
+    const [courses, assignments, exams, students] = await Promise.all([
         apiFetch('/api/courses'),
         apiFetch('/api/assignments'),
-        apiFetch('/api/exams')
+        apiFetch('/api/exams'),
+        apiFetch('/api/students')
     ]);
-    document.getElementById('statCourses').textContent = Array.isArray(courses) ? courses.length : 0;
-    document.getElementById('statAssignments').textContent = Array.isArray(assignments) ? assignments.length : 0;
-    document.getElementById('statExams').textContent = Array.isArray(exams) ? exams.length : 0;
-    // Students count is not implemented, keep as 0
-    document.getElementById('statStudents').textContent = 0;
+    const safeCourses = Array.isArray(courses) ? courses : [];
+    const safeAssignments = Array.isArray(assignments) ? assignments : [];
+    const safeExams = Array.isArray(exams) ? exams : [];
+    const safeStudents = Array.isArray(students) ? students : [];
+
+    document.getElementById('statCourses').textContent = safeCourses.length;
+    document.getElementById('statAssignments').textContent = safeAssignments.length;
+    document.getElementById('statExams').textContent = safeExams.length;
+    document.getElementById('statStudents').textContent = safeStudents.length;
+
+    renderLatestSubmissions(safeAssignments, safeExams);
 
     // Render chart if canvas exists
     const ctx = document.getElementById('performanceChart');
@@ -62,6 +68,87 @@ async function renderDashboardStats() {
             }
         });
     }
+}
+
+function renderLatestSubmissions(assignments, exams) {
+    const container = document.getElementById('latestSubmissionsList');
+    if (!container) return;
+
+    const assignmentSubmissions = (Array.isArray(assignments) ? assignments : []).flatMap(assignment =>
+        (Array.isArray(assignment.submissions) ? assignment.submissions : []).map(submission => ({
+            type: 'assignment',
+            icon: '📝',
+            title: submission.studentName || 'Unknown student',
+            subtitle: `${assignment.title || 'Untitled assignment'} • ${submission.status || 'Submitted'}`,
+            extra: submission.score == null ? 'Assignment submitted' : `Score: ${submission.score}`,
+            submittedAt: submission.submittedAt
+        }))
+    );
+
+    const examSubmissions = (Array.isArray(exams) ? exams : []).flatMap(exam =>
+        (Array.isArray(exam.results) ? exam.results : []).map(result => ({
+            type: 'exam',
+            icon: '🧪',
+            title: result.studentName || 'Unknown student',
+            subtitle: `${exam.title || 'Untitled exam'} • ${result.status || 'Completed'}`,
+            extra: `Score: ${result.score}/${exam.totalMarks || 0} (${result.percentage || 0}%)`,
+            submittedAt: result.submittedAt
+        }))
+    );
+
+    const sorted = [...assignmentSubmissions, ...examSubmissions]
+        .map(item => ({
+            ...item,
+            parsedDate: item.submittedAt ? new Date(item.submittedAt) : null
+        }))
+        .sort((a, b) => {
+            const aTime = a.parsedDate && !isNaN(a.parsedDate.getTime()) ? a.parsedDate.getTime() : 0;
+            const bTime = b.parsedDate && !isNaN(b.parsedDate.getTime()) ? b.parsedDate.getTime() : 0;
+            return bTime - aTime;
+        })
+        .slice(0, 6);
+
+    if (sorted.length === 0) {
+        container.innerHTML = '<p class="submissions-empty">No student submissions yet.</p>';
+        return;
+    }
+
+    container.innerHTML = sorted.map(item => `
+        <div class="submission-item">
+            <span class="submission-icon">${item.icon}</span>
+            <div class="submission-content">
+                <span class="submission-title">${escapeHtml(item.title)}</span>
+                <span class="submission-meta">${escapeHtml(item.subtitle)}</span>
+                <span class="submission-meta">${escapeHtml(item.extra)} • ${formatRelativeDate(item.parsedDate)}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+function formatRelativeDate(date) {
+    if (!date || isNaN(date.getTime())) return 'Date not available';
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMinutes = Math.floor(diffMs / 60000);
+    if (diffMinutes < 1) return 'Just now';
+    if (diffMinutes < 60) return `${diffMinutes} min ago`;
+
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+
+    return date.toLocaleDateString();
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 // For modular load, call from initializeApp if present

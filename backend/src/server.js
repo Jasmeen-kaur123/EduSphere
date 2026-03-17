@@ -24,8 +24,34 @@ mongoose
 		const Exam = require('./models/Exam');
 		const Student = require('./models/Student');
 
+		const buildAssignmentSubmissions = (studentNames, baseDate) =>
+			studentNames.map((studentName, index) => ({
+				studentName,
+				submittedAt: new Date(baseDate.getTime() - index * 6 * 60 * 60 * 1000),
+				status: index === 0 ? 'Submitted' : 'Reviewed',
+				score: 78 + index * 6
+			}));
+
+		const buildExamResults = (studentNames, baseDate, totalMarks) =>
+			studentNames.map((studentName, index) => {
+				const score = Math.min(totalMarks, 68 + index * 10);
+				return {
+					studentName,
+					submittedAt: new Date(baseDate.getTime() - index * 8 * 60 * 60 * 1000),
+					score,
+					percentage: Math.round((score / totalMarks) * 100),
+					status: score >= totalMarks * 0.4 ? 'Passed' : 'Needs Review'
+				};
+			});
+
 		const courseCount = await Course.countDocuments();
 		if (courseCount === 0) {
+			const seededStudents = [
+				'Brenda M. Stroman',
+				'Mark J. Lopez',
+				'Doris J. Bartlett'
+			];
+
 			const courseA = await Course.create({
 				name: 'Web Development Fundamentals',
 				description: 'Learn the basics of web development with HTML, CSS, and JavaScript',
@@ -47,6 +73,7 @@ mongoose
 				description: 'Create a responsive website layout using HTML5 and modern CSS3 techniques',
 				dueDate: new Date('2026-03-15'),
 				courseId: courseA._id,
+				submissions: buildAssignmentSubmissions(seededStudents, new Date('2026-03-14T15:00:00Z')),
 				submitted: 45,
 				total: 50,
 				late: 5,
@@ -58,6 +85,7 @@ mongoose
 				description: 'Write JavaScript functions to solve complex problems and demonstrate understanding',
 				dueDate: new Date('2026-03-20'),
 				courseId: courseB._id,
+				submissions: buildAssignmentSubmissions(seededStudents, new Date('2026-03-17T10:30:00Z')),
 				submitted: 38,
 				total: 50,
 				late: 2,
@@ -72,6 +100,7 @@ mongoose
 				totalMarks: 100,
 				passingScore: 40,
 				courseId: courseA._id,
+				results: buildExamResults(seededStudents, new Date('2026-03-16T12:00:00Z'), 100),
 				completed: 45,
 				inProgress: 3,
 				notAttended: 2,
@@ -86,6 +115,7 @@ mongoose
 				totalMarks: 50,
 				passingScore: 25,
 				courseId: courseB._id,
+				results: buildExamResults(seededStudents, new Date('2026-03-17T09:15:00Z'), 50),
 				completed: 20,
 				inProgress: 5,
 				notAttended: 10,
@@ -111,6 +141,27 @@ mongoose
 			});
 
 			console.log('✨ Seeded sample data');
+		}
+
+		const existingStudents = await Student.find().sort({ createdAt: 1 }).lean();
+		const studentNames = existingStudents.length > 0
+			? existingStudents.map((student) => student.name)
+			: ['Brenda M. Stroman', 'Mark J. Lopez', 'Doris J. Bartlett'];
+
+		const existingAssignments = await Assignment.find();
+		for (const assignment of existingAssignments) {
+			if (!Array.isArray(assignment.submissions) || assignment.submissions.length === 0) {
+				assignment.submissions = buildAssignmentSubmissions(studentNames, assignment.dueDate || new Date());
+				await assignment.save();
+			}
+		}
+
+		const existingExams = await Exam.find();
+		for (const exam of existingExams) {
+			if (!Array.isArray(exam.results) || exam.results.length === 0) {
+				exam.results = buildExamResults(studentNames, exam.date || new Date(), exam.totalMarks || 100);
+				await exam.save();
+			}
 		}
 	})
 	.catch((err) => console.error('❌ MongoDB connection error:', err));

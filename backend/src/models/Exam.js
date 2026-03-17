@@ -8,6 +8,18 @@ const ExamSchema = new mongoose.Schema({
   totalMarks: { type: Number, required: true },
   passingScore: { type: Number, required: true },
   courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' },
+  results: {
+    type: [
+      {
+        studentName: { type: String, required: true },
+        submittedAt: { type: Date, required: true },
+        score: { type: Number, required: true },
+        percentage: { type: Number, required: true },
+        status: { type: String, default: 'Completed' }
+      }
+    ],
+    default: []
+  },
   completed: { type: Number, default: 0 },
   inProgress: { type: Number, default: 0 },
   notAttended: { type: Number, default: 0 },

@@ -571,6 +571,49 @@ body {
   color: var(--text-secondary);
 }
 
+.quick-actions-card {
+  min-height: 360px;
+}
+
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.quick-action-btn {
+  border: 1px solid #ECE7F7;
+  background-color: #F8F6FC;
+  border-radius: 10px;
+  min-height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.quick-action-btn:hover {
+  transform: translateY(-2px);
+  border-color: #D6CBEC;
+  box-shadow: 0 8px 20px rgba(108, 74, 182, 0.12);
+  background-color: #F2ECFD;
+}
+
+.quick-action-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.quick-action-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: capitalize;
+}
+
 .btn-all-member {
   background-color: var(--lavender);
   color: var(--primary);

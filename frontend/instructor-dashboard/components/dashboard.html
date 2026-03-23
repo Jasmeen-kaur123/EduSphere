@@ -9,28 +9,24 @@
             <div class="stat-content">
                 <div class="stat-number" id="statCourses">0</div>
                 <div class="stat-label">Total Courses</div>
-                <div class="stat-change positive">↑ 0%</div>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-content">
                 <div class="stat-number" id="statStudents">0</div>
                 <div class="stat-label">Total Students</div>
-                <div class="stat-change positive">↑ 0%</div>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-content">
                 <div class="stat-number" id="statAssignments">0</div>
-                <div class="stat-label">Active Assignments</div>
-                <div class="stat-change negative">↓ 0%</div>
+                <div class="stat-label">Total Assignments</div>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-content">
                 <div class="stat-number" id="statExams">0</div>
-                <div class="stat-label">Active Exams</div>
-                <div class="stat-change positive">↑ 0%</div>
+                <div class="stat-label">Total Exams</div>
             </div>
         </div>
     </div>
@@ -44,12 +40,35 @@
             </div>
             <canvas id="performanceChart"></canvas>
         </div>
-        <div class="chart-card submissions-card">
+        <div class="chart-card quick-actions-card">
             <div class="chart-header">
-                <h3>Latest Student Submissions</h3>
+                <h3>Quick actions</h3>
             </div>
-            <div class="submissions-list" id="latestSubmissionsList">
-                <p class="submissions-empty">No student submissions yet.</p>
+            <div class="quick-actions-grid" id="quickActionsGrid">
+                <button type="button" class="quick-action-btn" data-action="create-course">
+                    <span class="quick-action-icon">📚</span>
+                    <span class="quick-action-label">Create course</span>
+                </button>
+                <button type="button" class="quick-action-btn" data-action="create-exam">
+                    <span class="quick-action-icon">📝</span>
+                    <span class="quick-action-label">Create exam</span>
+                </button>
+                <button type="button" class="quick-action-btn" data-action="create-assignment">
+                    <span class="quick-action-icon">✏️</span>
+                    <span class="quick-action-label">Create assignment</span>
+                </button>
+                <button type="button" class="quick-action-btn" data-action="view-courses">
+                    <span class="quick-action-icon">🎯</span>
+                    <span class="quick-action-label">My courses</span>
+                </button>
+                <button type="button" class="quick-action-btn" data-action="view-students">
+                    <span class="quick-action-icon">👥</span>
+                    <span class="quick-action-label">Students</span>
+                </button>
+                <button type="button" class="quick-action-btn" data-action="view-assignments">
+                    <span class="quick-action-icon">📌</span>
+                    <span class="quick-action-label">Assignments</span>
+                </button>
             </div>
         </div>
     </div>

@@ -276,6 +276,9 @@ function escapeHtml(value) {
 
 // Section Navigation
 function showSection(sectionId) {
+  const sections = document.querySelectorAll('.section');
+  const navItems = document.querySelectorAll('.nav-item');
+
   // Hide all sections
   sections.forEach(section => {
     section.classList.remove('active');
@@ -299,15 +302,6 @@ function showSection(sectionId) {
     window.logInstructorVisit(sectionId);
   }
 }
-
-// Navigation Event Listeners
-navItems.forEach(item => {
-  item.addEventListener('click', (e) => {
-    e.preventDefault();
-    const sectionId = item.dataset.section;
-    showSection(sectionId);
-  });
-});
 
 // Modal Event Listeners
 function openCourseModal(mode = 'create', courseData = null) {
@@ -423,6 +417,8 @@ async function populateExamCourseDropdown() {
 }
 
 // Expose to global for dynamic event handlers
+window.openCourseModal = openCourseModal;
+window.openAssignmentModal = openAssignmentModal;
 window.openExamModal = openExamModal;
 
 // (Removed duplicate event listener, now handled in initializeApp)
@@ -470,36 +466,36 @@ function closeEnrollmentModal() {
   if (modal) closeModal('enrollmentModal');
 }
 
-// Close modal buttons
-document.querySelectorAll('.modal-close').forEach(btn => {
-  btn.addEventListener('click', (e) => {
-    const modal = e.target.closest('.modal');
+// Use delegated modal close handling so dynamically injected modals work too.
+document.addEventListener('click', (e) => {
+  const closeTrigger = e.target.closest('.modal-close, .modal-close-btn');
+  if (closeTrigger) {
+    const modal = closeTrigger.closest('.modal');
     if (modal) {
       modal.classList.remove('active');
       document.body.style.overflow = 'auto';
     }
-  });
-});
+    return;
+  }
 
-// Close modal by close button
-document.querySelectorAll('.modal-close-btn').forEach(btn => {
-  btn.addEventListener('click', (e) => {
-    const modal = e.target.closest('.modal');
-    if (modal) {
-      modal.classList.remove('active');
-      document.body.style.overflow = 'auto';
+  const cancelButton = e.target.closest('button');
+  if (cancelButton) {
+    const buttonText = (cancelButton.textContent || '').trim().toLowerCase();
+    if (buttonText === 'cancel') {
+      const modal = cancelButton.closest('.modal');
+      if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+        return;
+      }
     }
-  });
-});
+  }
 
-// Close modal when clicking outside
-modals.forEach(modal => {
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-      modal.classList.remove('active');
-      document.body.style.overflow = 'auto';
-    }
-  });
+  const modal = e.target.classList && e.target.classList.contains('modal') ? e.target : null;
+  if (modal) {
+    modal.classList.remove('active');
+    document.body.style.overflow = 'auto';
+  }
 });
 
 // Form Submissions

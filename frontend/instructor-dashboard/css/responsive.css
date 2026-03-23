@@ -202,6 +202,10 @@
   .course-header {
     flex-direction: column;
   }
+
+  .quick-actions-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 /* Small Mobile */
@@ -246,6 +250,10 @@
   .chart-legend {
     flex-direction: column;
     gap: 8px;
+  }
+
+  .quick-actions-grid {
+    grid-template-columns: 1fr;
   }
 
   .form-actions {

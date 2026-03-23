@@ -39,7 +39,7 @@ async function renderDashboardStats() {
     document.getElementById('statExams').textContent = safeExams.length;
     document.getElementById('statStudents').textContent = safeStudents.length;
 
-    renderLatestSubmissions(safeAssignments, safeExams);
+    initQuickActions();
 
     // Render chart if canvas exists
     const ctx = document.getElementById('performanceChart');
@@ -68,6 +68,53 @@ async function renderDashboardStats() {
             }
         });
     }
+}
+
+function initQuickActions() {
+    const grid = document.getElementById('quickActionsGrid');
+    if (!grid || grid.dataset.bound === 'true') return;
+
+    grid.dataset.bound = 'true';
+    grid.addEventListener('click', (event) => {
+        const button = event.target.closest('.quick-action-btn');
+        if (!button) return;
+
+        const action = button.dataset.action;
+        if (action === 'create-course') {
+            if (typeof window.openCourseModal === 'function') {
+                window.openCourseModal('create');
+            }
+            return;
+        }
+
+        if (action === 'create-exam') {
+            if (typeof window.openExamModal === 'function') {
+                window.openExamModal('create');
+            }
+            return;
+        }
+
+        if (action === 'create-assignment') {
+            if (typeof window.openAssignmentModal === 'function') {
+                window.openAssignmentModal('create');
+            }
+            return;
+        }
+
+        if (action === 'view-courses') {
+            if (typeof showSection === 'function') showSection('mycourses');
+            return;
+        }
+
+        if (action === 'view-students') {
+            if (typeof showSection === 'function') showSection('students');
+            return;
+        }
+
+        if (action === 'view-assignments') {
+            if (typeof showSection === 'function') showSection('assignments');
+        }
+    });
 }
 
 function renderLatestSubmissions(assignments, exams) {

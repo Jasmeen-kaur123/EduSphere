@@ -1,92 +1,160 @@
 const express = require("express");
-require("dotenv").config();
 const path = require("path");
-
 const app = express();
-const port = process.env.PORT || 8000;
+
+require("./db"); // MongoDB connect
+
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+
+const User = require("./models/User");
+const Course = require("./models/Course");
+const Testimonial = require("./models/Testimonial");
+const Faq = require("./models/Faq");
+
+const SECRET_KEY = "edusphere_secret";
+
+// ================= MIDDLEWARE =================
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve the public folder which is located one level up from src
-app.use(express.static(path.join(__dirname, "..", "public")));
+// Static folder
+app.use(express.static(path.join(__dirname, "../public")));
 
-const courses = [
-{
-id:1,
-title:"Web Development",
-instructor:"John Doe"
-},
-{
-id:2,
-title:"Java Programming",
-instructor:"Jane Smith"
-},
-{
-id:3,
-title:"Data Structures",
-instructor:"Alex"
-}
-];
 
-const users = [
-  {
-    name: "Manjot",
-    email: "manjot@gmail.com",
-    password: "1234"
+// ================= AUTH MIDDLEWARE =================
+
+function auth(req, res, next) {
+  const header = req.headers.authorization;
+
+  if (!header) {
+    return res.status(401).json({ message: "No token provided" });
   }
-];
 
-app.post("/api/signup",(req,res)=>{
+  // Expect: Bearer TOKEN
+  const token = header.split(" ")[1];
 
-const {name,email,password} = req.body
-
-const user = {name,email,password}
-
-users.push(user)
-
-res.json({
-success:true,
-user
-})
-
-})
-
-app.get("/api/courses",(req,res)=>{
-res.json(courses);
-});
-
-app.post("/api/login",(req,res)=>{
-
-const {email,password} = req.body;
-
-const user = users.find(
-u => u.email === email && u.password === password
-);
-
-if(user){
-
-res.json({
-success:true,
-user
-});
-
-}else{
-
-res.json({
-success:false,
-message:"Invalid email or password"
-});
-
+  try {
+    const decoded = jwt.verify(token, SECRET_KEY);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: "Invalid token" });
+  }
 }
 
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "../public/pages/dashboard.html"));
 });
 
-app.get("/",(req,res)=>{
-  // send the dashboard from the public folder (up one level from src)
-  res.sendFile(path.join(__dirname, "..", "public", "pages", "dashboard.html"));
+// ================= AUTH ROUTES =================
+
+// SIGNUP
+app.post("/signup", async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+
+    // Check existing user
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return res.json({ success: false, message: "User already exists" });
+    }
+
+    // Hash password
+    const hash = await bcrypt.hash(password, 10);
+
+    const user = new User({
+      username,
+      email,
+      password: hash
+    });
+
+    await user.save();
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Signup error" });
+  }
 });
 
-app.listen(port,()=>{
-console.log(`Server running on port ${port}`);
+
+// LOGIN
+app.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    const match = await bcrypt.compare(password, user.password);
+
+    if (!match) {
+      return res.json({ success: false, message: "Wrong password" });
+    }
+
+    const token = jwt.sign(
+      { userId: user._id, username: user.username },
+      SECRET_KEY,
+      { expiresIn: "1h" }
+    );
+
+    res.json({
+      success: true,
+      token,
+      username: user.username
+    });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Login error" });
+  }
+});
+
+
+// ================= API ROUTES =================
+
+// COURSES (PROTECTED)
+app.get("/api/courses", auth, async (req, res) => {
+  try {
+    const courses = await Course.find();
+    res.json(courses);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch courses" });
+  }
+});
+
+
+// TESTIMONIALS
+app.get("/api/testimonials", async (req, res) => {
+  try {
+    const data = await Testimonial.find();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch testimonials" });
+  }
+});
+
+
+// FAQ
+app.get("/api/faqs", async (req, res) => {
+  try {
+    const data = await Faq.find();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch FAQs" });
+  }
+});
+
+
+// ================= SERVER =================
+
+app.listen(8000, () => {
+  console.log("Server running on http://localhost:8000");
 });

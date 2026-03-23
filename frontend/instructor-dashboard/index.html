@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instructor Dashboard - EduSphere</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar (modular include) -->
+        <div id="sidebar-container"></div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Topbar (modular include) -->
+            <div id="topbar-container"></div>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Dashboard Section (modular include) -->
+                <div id="dashboard-container"></div>
+
+                <!-- My Courses Section (modular include) -->
+                <div id="mycourses-container"></div>
+
+                <!-- Student Enrollment Section -->
+                <section id="students" class="section">
+                    <div class="section-header">
+                        <h1>Student Enrollment</h1>
+                        <input type="text" placeholder="Search students..." class="search-input">
+                    </div>
+
+                    <div class="table-container">
+                        <table class="student-table">
+                            <thead>
+                                <tr>
+                                    <th>Student Name</th>
+                                    <th>Email</th>
+                                    <th>Progress</th>
+                                    <th>Completed Lessons</th>
+                                    <th>Last Active</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                        <!-- Students will be loaded here dynamically -->
+                    </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Assignments Section (modular include) -->
+                <div id="assignments-container"></div>
+
+                <!-- Exams Section (modular include) -->
+                <div id="exams-container"></div>
+
+                <!-- Profile Section -->
+                <section id="profile" class="section">
+                    <div class="section-header">
+                        <h1>Instructor Profile</h1>
+                    </div>
+
+                    <div class="profile-container">
+                        <div class="profile-card">
+                            <div class="profile-header">
+                                <img src="https://ui-avatars.com/api/?name=Jasmeen&background=6C4AB6&color=fff&size=120" alt="Profile" class="profile-image">
+                                <div class="profile-info">
+                                    <h2>Jasmeen</h2>
+                                    <p>Senior Instructor - Web Development</p>
+                                    <p>jasmeen@edusphere.com</p>
+                                </div>
+                                <button class="btn-primary" id="editProfileModal">Edit Profile</button>
+                            </div>
+
+                            <div class="profile-content">
+                                <div class="profile-section">
+                                    <h3>About</h3>
+                                    <p>Experienced instructor with 10+ years in web development and online education. Passionate about helping students master modern web technologies.</p>
+                                </div>
+
+                                <div class="profile-section">
+                                    <h3>Qualifications</h3>
+                                    <ul>
+                                        <li>Bachelor of Science in Computer Science</li>
+                                        <li>AWS Certified Solutions Architect</li>
+                                        <li>Google Cloud Professional Developer</li>
+                                    </ul>
+                                </div>
+
+                                <div class="profile-section">
+                                    <h3>Statistics</h3>
+                                    <div class="stats-grid">
+                                        <div class="stat-item">
+                                            <span class="stat-number">12</span>
+                                            <span class="stat-label">Courses</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-number">450</span>
+                                            <span class="stat-label">Students</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-number">4.8</span>
+                                            <span class="stat-label">Rating</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-number">1250+</span>
+                                            <span class="stat-label">Reviews</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="profile-section">
+                                    <h3>Contact Information</h3>
+                                    <form class="profile-form">
+                                        <div class="form-group">
+                                            <label>Email</label>
+                                            <input type="email" value="jasmeen@edusphere.com" readonly>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Phone</label>
+                                            <input type="tel" value="+1 (555) 123-4567">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Bio</label>
+                                            <textarea rows="4">Experienced instructor with 10+ years in web development...</textarea>
+                                        </div>
+                                        <button type="submit" class="btn-primary">Save Changes</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Global Modals -->
+
+    <div id="courseModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="courseModalTitle">Create New Course</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="courseForm">
+                <input type="hidden" id="courseId" value="">
+                <div class="form-group">
+                    <label for="courseName">Course Name</label>
+                    <input type="text" id="courseName" required>
+                </div>
+                <div class="form-group">
+                    <label for="courseDescription">Description</label>
+                    <textarea id="courseDescription" rows="4" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="courseDuration">Duration (weeks)</label>
+                    <input type="number" id="courseDuration" required>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary modal-close-btn">Cancel</button>
+                    <button type="submit" class="btn-primary" id="courseModalSubmit">Create Course</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Assignment Modal -->
+    <div id="assignmentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="assignmentModalTitle">Create Assignment</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="assignmentForm">
+                <input type="hidden" id="assignmentId" value="">
+                <div class="form-group">
+                    <label for="assignmentTitle">Title</label>
+                    <input type="text" id="assignmentTitle" required>
+                </div>
+                <div class="form-group">
+                    <label for="assignmentDescription">Description</label>
+                    <textarea id="assignmentDescription" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="assignmentDueDate">Due Date</label>
+                    <input type="date" id="assignmentDueDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="assignmentCourse">Course</label>
+                    <select id="assignmentCourse"></select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary modal-close-btn">Cancel</button>
+                    <button type="submit" class="btn-primary">Create Assignment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="enrollmentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Enrollments</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" id="enrollmentModalBody">
+                <p>Loading enrollments...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="studentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Student Profile</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" id="studentModalBody">
+                <p>Loading student data...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="takeExamModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Take Exam</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" id="takeExamBody">
+                <form id="takeExamForm">
+                    <div id="takeExamQuestions"></div>
+                    <div id="takeExamResults" class="take-exam-results" style="display:none;"></div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary modal-close-btn">Cancel</button>
+                        <button type="submit" class="btn-primary">Submit Exam</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="submissionsModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="submissionsTitle">Exam Submissions</h2>
+            <button class="modal-close">&times;</button>
+        </div>
+
+        <div class="modal-body" id="submissionsBody">
+            <!-- Results will be inserted here by JavaScript -->
+
+            <div class="exam-results">
+                <p><strong>Completed:</strong> 0</p>
+                <p><strong>In Progress:</strong> 0</p>
+                <p><strong>Not Attended:</strong> 0</p>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/mycourses.js"></script>
+    <script src="js/assignments.js"></script>
+    <script src="js/exams.js"></script>
+    <script>
+      // Dynamically load modular HTML components and initialize app after all are loaded
+      function loadComponent(id, url) {
+          return fetch(url)
+              .then(res => res.text())
+              .then(html => { document.getElementById(id).innerHTML = html; });
+      }
+
+      function loadAllComponentsAndInit() {
+          Promise.all([
+              loadComponent('sidebar-container', 'components/sidebar.html'),
+              loadComponent('topbar-container', 'components/topbar.html'),
+              loadComponent('dashboard-container', 'components/dashboard.html'),
+              loadComponent('mycourses-container', 'components/mycourses.html'),
+              loadComponent('assignments-container', 'components/assignments.html'),
+              loadComponent('exams-container', 'components/exams.html'),
+              // Dynamically load the exam modal if missing
+              fetch('components/exam-modal.html').then(res => res.text()).then(html => {
+                // Only add if not already present
+                if (!document.getElementById('examModal')) {
+                  document.body.insertAdjacentHTML('beforeend', html);
+                }
+              })
+          ]).then(() => {
+              if (typeof initializeApp === 'function') {
+                  initializeApp();
+              }
+          });
+      }
+      loadAllComponentsAndInit();
+    </script>
+</body>
+</html>

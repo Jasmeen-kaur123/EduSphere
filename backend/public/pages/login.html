@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -97,12 +96,9 @@ const data = await res.json()
 
 if(data.success){
 
-// SAVE USER
-
-localStorage.setItem("username",data.user.name)
-localStorage.setItem("userEmail",data.user.email)
-
-// REDIRECT DASHBOARD
+// SAVE USER DETAILS
+localStorage.setItem("username", data.user?.name || "")
+localStorage.setItem("userEmail", data.user?.email || "")
 
 window.location.href="/pages/dashboard.html"
 
@@ -124,4 +120,3 @@ document.getElementById("error").innerText="Server error"
 
 </body>
 </html>
-

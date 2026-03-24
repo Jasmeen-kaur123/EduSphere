@@ -1,30 +1,30 @@
 const express = require("express");
 const path = require("path");
-const app = express();
-
-require("./db"); // MongoDB connect
-
+const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 
+const app = express();
+
+// Models
 const User = require("./models/User");
 const Course = require("./models/Course");
 const Testimonial = require("./models/Testimonial");
 const Faq = require("./models/Faq");
 
-const SECRET_KEY = "edusphere_secret";
+// ENV / CONFIG
+const SECRET_KEY = process.env.JWT_SECRET || "edusphere_secret";
+const mongoUri = process.env.MONGODB_URI || "mongodb://localhost:27017/edusphere";
+const port = process.env.PORT || 4000;
 
 // ================= MIDDLEWARE =================
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Static folder
+// Static files
 app.use(express.static(path.join(__dirname, "../public")));
 
-
 // ================= AUTH MIDDLEWARE =================
-
 function auth(req, res, next) {
   const header = req.headers.authorization;
 
@@ -32,7 +32,6 @@ function auth(req, res, next) {
     return res.status(401).json({ message: "No token provided" });
   }
 
-  // Expect: Bearer TOKEN
   const token = header.split(" ")[1];
 
   try {
@@ -44,43 +43,41 @@ function auth(req, res, next) {
   }
 }
 
+// ================= ROUTES =================
 
+// Home
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/pages/dashboard.html"));
 });
 
-// ================= AUTH ROUTES =================
+// ===== AUTH =====
 
 // SIGNUP
 app.post("/signup", async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    // Check existing user
     const existing = await User.findOne({ email });
     if (existing) {
       return res.json({ success: false, message: "User already exists" });
     }
 
-    // Hash password
     const hash = await bcrypt.hash(password, 10);
 
     const user = new User({
       username,
       email,
-      password: hash
+      password: hash,
     });
 
     await user.save();
 
     res.json({ success: true });
-
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: "Signup error" });
   }
 });
-
 
 // LOGIN
 app.post("/login", async (req, res) => {
@@ -108,30 +105,20 @@ app.post("/login", async (req, res) => {
     res.json({
       success: true,
       token,
-      username: user.username
+      username: user.username,
     });
-
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: "Login error" });
   }
 });
 
+// ===== API =====
 
-// ================= API ROUTES =================
+// COURSES (Protected)
+app.use("/api/courses", auth, require("./routes/courses"));
 
-// COURSES (PROTECTED)
-app.get("/api/courses", auth, async (req, res) => {
-  try {
-    const courses = await Course.find();
-    res.json(courses);
-  } catch (err) {
-    res.status(500).json({ error: "Failed to fetch courses" });
-  }
-});
-
-
-// TESTIMONIALS
+// Other APIs
 app.get("/api/testimonials", async (req, res) => {
   try {
     const data = await Testimonial.find();
@@ -141,8 +128,6 @@ app.get("/api/testimonials", async (req, res) => {
   }
 });
 
-
-// FAQ
 app.get("/api/faqs", async (req, res) => {
   try {
     const data = await Faq.find();
@@ -152,9 +137,31 @@ app.get("/api/faqs", async (req, res) => {
   }
 });
 
+// Extra routes
+app.use("/api/assignments", require("./routes/assignments"));
+app.use("/api/exams", require("./routes/exams"));
+app.use("/api/students", require("./routes/students"));
+app.use("/api/storage", require("./routes/storage"));
 
-// ================= SERVER =================
+// ================= FRONTEND =================
+const frontendPath = path.join(__dirname, "..", "..", "frontend", "instructor-dashboard");
+app.use(express.static(frontendPath));
 
-app.listen(8000, () => {
-  console.log("Server running on http://localhost:8000");
+// SPA fallback
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(frontendPath, "index.html"));
 });
+
+// ================= DB CONNECT + SERVER START =================
+mongoose
+  .connect(mongoUri)
+  .then(() => {
+    console.log("✅ MongoDB Connected");
+
+    app.listen(port, () => {
+      console.log(`🚀 Server running on http://localhost:${port}`);
+    });
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB connection error:", err);
+  });

@@ -177,6 +177,7 @@ app.use('/api/storage', require('./routes/storage'));
 const frontendPath = path.join(__dirname, '..', '..', 'frontend', 'instructor-dashboard');
 app.use(express.static(frontendPath));
 
+
 // Ensure SPA routing works (Catch-all route)
 app.get(/.*/, (req, res) => {
 	res.sendFile(path.join(frontendPath, 'index.html'));

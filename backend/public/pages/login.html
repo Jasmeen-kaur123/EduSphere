@@ -78,7 +78,7 @@ const password = document.getElementById("password").value
 
 try{
 
-const res = await fetch("/api/login",{
+const res = await fetch("/login",{
 
 method:"POST",
 headers:{
@@ -97,8 +97,8 @@ const data = await res.json()
 if(data.success){
 
 // SAVE USER DETAILS
-localStorage.setItem("username", data.user?.name || "")
-localStorage.setItem("userEmail", data.user?.email || "")
+localStorage.setItem("username", data.username || "")
+localStorage.setItem("token", data.token || "")
 
 window.location.href="/pages/dashboard.html"
 

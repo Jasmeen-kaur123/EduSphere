@@ -73,7 +73,7 @@
                                     <p>Senior Instructor - Web Development</p>
                                     <p>jasmeen@edusphere.com</p>
                                 </div>
-                                <button class="btn-primary" id="editProfileModal">Edit Profile</button>
+                                <button class="btn-primary" id="editProfileBtn">Edit Profile</button>
                             </div>
 
                             <div class="profile-content">
@@ -135,6 +135,9 @@
                         </div>
                     </div>
                 </section>
+
+                <!-- Help Center Section (modular include) -->
+                <div id="help-container"></div>
             </div>
         </main>
     </div>
@@ -322,6 +325,7 @@
               loadComponent('mycourses-container', 'components/mycourses.html'),
               loadComponent('assignments-container', 'components/assignments.html'),
               loadComponent('exams-container', 'components/exams.html'),
+              loadComponent('help-container', 'components/help.html'),
               // Dynamically load the exam modal if missing
               fetch('components/exam-modal.html').then(res => res.text()).then(html => {
                 // Only add if not already present
@@ -332,9 +336,232 @@
           ]).then(() => {
               // Components are now loaded - app was already initialized by app.js above
               console.log('✓ All components loaded and app initialized');
+
+              // Add profile nav click handler after components are loaded
+              const profileNav = document.getElementById('profileNav');
+              if (profileNav) {
+                  profileNav.addEventListener('click', (e) => {
+                      e.preventDefault();
+                      if (typeof showSection === 'function') {
+                          showSection('profile');
+                      }
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                  });
+              }
+
+              // Initialize edit profile functionality
+              setTimeout(() => {
+                  if (typeof initializeEditProfile === 'function') {
+                      initializeEditProfile();
+                  }
+              }, 100);
+
+              // Edit Profile Functions
+              window.initializeEditProfile = function() {
+                  console.log('Initializing edit profile...');
+                  const editProfileBtn = document.getElementById('editProfileBtn');
+                  const editProfileModal = document.getElementById('editProfileModal');
+                  const editProfileForm = document.getElementById('editProfileForm');
+
+                  console.log('Edit profile elements:', { editProfileBtn, editProfileModal, editProfileForm });
+
+                  if (!editProfileBtn || !editProfileModal || !editProfileForm) {
+                      console.log('Edit profile elements not found');
+                      return;
+                  }
+
+                  // Open modal when edit profile button is clicked
+                  editProfileBtn.addEventListener('click', (e) => {
+                      console.log('Edit profile button clicked');
+                      e.preventDefault();
+                      openModal('editProfileModal');
+
+                      // Populate form with current profile data
+                      populateEditProfileForm();
+                  });
+
+                  // Handle form submission
+                  editProfileForm.addEventListener('submit', (e) => {
+                      console.log('Edit profile form submitted');
+                      e.preventDefault();
+                      saveProfileChanges();
+                  });
+              };
+
+              window.populateEditProfileForm = function() {
+                  // Get current profile data from the display
+                  const profileImage = document.querySelector('.profile-image');
+                  const profileName = document.querySelector('.profile-info h2');
+                  const profileTitle = document.querySelector('.profile-info p:first-child');
+                  const profileEmail = document.querySelector('.profile-info p:nth-child(2)');
+                  const profileBio = document.querySelector('.profile-section p');
+                  const qualificationsList = document.querySelectorAll('.profile-section ul li');
+
+                  // Populate form fields
+                  document.getElementById('editName').value = profileName ? profileName.textContent.trim() : 'Jasmeen';
+                  document.getElementById('editTitle').value = profileTitle ? profileTitle.textContent.trim() : 'Senior Instructor - Web Development';
+                  document.getElementById('editEmail').value = profileEmail ? profileEmail.textContent.trim() : 'jasmeen@edusphere.com';
+                  document.getElementById('editBio').value = profileBio ? profileBio.textContent.trim() : 'Experienced instructor with 10+ years in web development and online education. Passionate about helping students master modern web technologies.';
+
+                  // Get avatar URL
+                  const avatarUrl = profileImage ? profileImage.src : '';
+                  document.getElementById('editAvatar').value = avatarUrl.includes('ui-avatars.com') ? '' : avatarUrl;
+
+                  // Get phone from contact form
+                  const phoneInput = document.querySelector('.profile-form input[type="tel"]');
+                  document.getElementById('editPhone').value = phoneInput ? phoneInput.value : '+1 (555) 123-4567';
+
+                  // Get qualifications
+                  const qualifications = Array.from(qualificationsList).map(li => li.textContent.trim()).join('\n');
+                  document.getElementById('editQualifications').value = qualifications || 'Bachelor of Science in Computer Science\nAWS Certified Solutions Architect\nGoogle Cloud Professional Developer';
+              };
+
+              window.saveProfileChanges = function() {
+                  const formData = {
+                      name: document.getElementById('editName').value,
+                      title: document.getElementById('editTitle').value,
+                      email: document.getElementById('editEmail').value,
+                      phone: document.getElementById('editPhone').value,
+                      bio: document.getElementById('editBio').value,
+                      qualifications: document.getElementById('editQualifications').value.split('\n').filter(q => q.trim()),
+                      avatar: document.getElementById('editAvatar').value
+                  };
+
+                  // Update profile display
+                  updateProfileDisplay(formData);
+
+                  // Close modal
+                  closeModal('editProfileModal');
+
+                  // Show success notification
+                  if (typeof showNotification === 'function') {
+                      showNotification('Profile updated successfully!', 'success');
+                  }
+              };
+
+              window.updateProfileDisplay = function(data) {
+                  // Update profile header
+                  const profileImage = document.querySelector('.profile-image');
+                  const profileName = document.querySelector('.profile-info h2');
+                  const profileTitle = document.querySelector('.profile-info p:first-child');
+                  const profileEmail = document.querySelector('.profile-info p:nth-child(2)');
+
+                  if (profileImage) {
+                      profileImage.src = data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name)}&background=6C4AB6&color=fff&size=120`;
+                  }
+
+                  if (profileName) profileName.textContent = data.name;
+                  if (profileTitle) profileTitle.textContent = data.title;
+                  if (profileEmail) profileEmail.textContent = data.email;
+
+                  // Update topbar profile
+                  const topbarProfileImg = document.querySelector('#profileNav img');
+                  const topbarProfileName = document.querySelector('#profileNav span');
+
+                  if (topbarProfileImg) {
+                      topbarProfileImg.src = data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name)}&background=6C4AB6&color=fff&size=40`;
+                  }
+
+                  if (topbarProfileName) topbarProfileName.textContent = data.name;
+
+                  // Update bio
+                  const bioElement = document.querySelector('.profile-section p');
+                  if (bioElement) bioElement.textContent = data.bio;
+
+                  // Update qualifications
+                  const qualificationsList = document.querySelector('.profile-section ul');
+                  if (qualificationsList) {
+                      qualificationsList.innerHTML = data.qualifications.map(qual => `<li>${qual}</li>`).join('');
+                  }
+
+                  // Update contact form
+                  const emailInput = document.querySelector('.profile-form input[type="email"]');
+                  const phoneInput = document.querySelector('.profile-form input[type="tel"]');
+
+                  if (emailInput) emailInput.value = data.email;
+                  if (phoneInput) phoneInput.value = data.phone;
+
+                  // Save to localStorage
+                  localStorage.setItem('instructorProfile', JSON.stringify(data));
+              };
+
+              // Load saved profile data
+              const savedProfile = localStorage.getItem('instructorProfile');
+              if (savedProfile) {
+                  try {
+                      const profileData = JSON.parse(savedProfile);
+                      setTimeout(() => {
+                          updateProfileDisplay(profileData);
+                          // Update statistics after profile data is loaded
+                          if (typeof updateProfileStatistics === 'function') {
+                              updateProfileStatistics();
+                          }
+                      }, 200);
+                  } catch (e) {
+                      console.log('Error loading saved profile:', e);
+                  }
+              }
           });
       }
       loadAllComponentsAndInit();
     </script>
+
+    <!-- Edit Profile Modal -->
+    <div id="editProfileModal" class="modal">
+        <div class="modal-content large-modal">
+            <div class="modal-header">
+                <h2>Edit Profile</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="editProfileForm">
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editName">Full Name</label>
+                            <input type="text" id="editName" value="Jasmeen" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editTitle">Professional Title</label>
+                            <input type="text" id="editTitle" value="Senior Instructor - Web Development" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editEmail">Email Address</label>
+                            <input type="email" id="editEmail" value="jasmeen@edusphere.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editPhone">Phone Number</label>
+                            <input type="tel" id="editPhone" value="+1 (555) 123-4567" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editBio">Bio</label>
+                        <textarea id="editBio" rows="4" required>Experienced instructor with 10+ years in web development and online education. Passionate about helping students master modern web technologies.</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editQualifications">Qualifications (one per line)</label>
+                        <textarea id="editQualifications" rows="4" placeholder="Enter each qualification on a new line">Bachelor of Science in Computer Science
+AWS Certified Solutions Architect
+Google Cloud Professional Developer</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editAvatar">Profile Picture URL</label>
+                        <input type="url" id="editAvatar" value="https://ui-avatars.com/api/?name=Jasmeen&background=6C4AB6&color=fff&size=120" placeholder="Enter image URL or leave empty for default">
+                        <small class="form-help">Leave empty to use auto-generated avatar based on name</small>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary modal-close-btn">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </body>
 </html>

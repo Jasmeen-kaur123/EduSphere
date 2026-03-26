@@ -73,6 +73,10 @@ async function renderCourses() {
                     localStorage.setItem('courses', JSON.stringify(allCourses));
                 }
                 renderCourses();
+                // Update profile statistics after course deletion
+                if (typeof window.updateProfileStatistics === 'function') {
+                    window.updateProfileStatistics();
+                }
             }
         });
         container.appendChild(card);

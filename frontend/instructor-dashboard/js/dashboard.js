@@ -68,6 +68,11 @@ async function renderDashboardStats() {
             }
         });
     }
+
+    // Update profile statistics when dashboard data is refreshed
+    if (typeof window.updateProfileStatistics === 'function') {
+        window.updateProfileStatistics();
+    }
 }
 
 function initQuickActions() {

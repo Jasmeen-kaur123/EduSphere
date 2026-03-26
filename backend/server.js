@@ -123,9 +123,14 @@ app.use('/api/students', require('./src/routes/students'));
 app.use('/api/storage', require('./src/routes/storage'));
 
 // Serve frontend static files
-const frontendPath = path.join(__dirname, '..', 'Frontend', 'instructor-dashboard');
-app.use(express.static(frontendPath));
+const frontendPath = path.join(__dirname, '..', 'frontend', 'instructor-dashboard');
+app.use(express.static(frontendPath, { index: false }));
 
+// ✅ HELP ROUTE ADD KARO (yahi missing hai)
+app.get('/help-page', (req, res) => {
+	console.log("🔥 HELP PAGE HIT");
+	res.sendFile(path.join(frontendPath, 'help.html'));
+});
 // Ensure SPA routing works (Catch-all route)
 app.get(/.*/, (req, res) => {
 	res.sendFile(path.join(frontendPath, 'index.html'));

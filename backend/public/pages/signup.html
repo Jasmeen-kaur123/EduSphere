@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Signup</title>
+<link rel="stylesheet" href="../css/auth.css">
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="left">
+
+<h1>Create Account</h1>
+
+<p>Already have an account? <a href="/pages/login.html">Login</a></p>
+
+<form onsubmit="event.preventDefault(); signupUser();">
+
+<label>Full Name</label>
+<input type="text" id="username" placeholder="Enter name" required>
+
+
+<label>Email</label>
+<input type="email" id="email" placeholder="Enter email" required>
+
+<label>Password</label>
+<input type="password" id="password" placeholder="Enter password" required>
+
+<button class="btn">Create Account</button>
+
+</form>
+
+</div>
+
+<div class="right">
+
+<div class="brand">
+
+<h1>EduSphere</h1>
+<p>Learn. Grow. Succeed.</p>
+
+</div>
+
+</div>
+
+</div>
+<script src="/js/script.js"></script>
+</body>
+</html>

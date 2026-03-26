@@ -1,188 +1,167 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-const mongoose = require('mongoose');
+const express = require("express");
+const path = require("path");
+const mongoose = require("mongoose");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 
 const app = express();
 
-// Middlewares
-app.use(cors());
+// Models
+const User = require("./models/User");
+const Course = require("./models/Course");
+const Testimonial = require("./models/Testimonial");
+const Faq = require("./models/Faq");
+
+// ENV / CONFIG
+const SECRET_KEY = process.env.JWT_SECRET || "edusphere_secret";
+const mongoUri = process.env.MONGODB_URI || "mongodb://localhost:27017/edusphere";
+const port = process.env.PORT || 4000;
+
+// ================= MIDDLEWARE =================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// MongoDB setup
-const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/edusphere';
-mongoose
-	.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
-	.then(async () => {
-		console.log('✅ Connected to MongoDB');
+// Static files
+app.use(express.static(path.join(__dirname, "../public")));
 
-		// Seed sample data if missing (optional)
-		const Course = require('./models/Course');
-		const Assignment = require('./models/Assignment');
-		const Exam = require('./models/Exam');
-		const Student = require('./models/Student');
+// ================= AUTH MIDDLEWARE =================
+function auth(req, res, next) {
+  const header = req.headers.authorization;
 
-		const buildAssignmentSubmissions = (studentNames, baseDate) =>
-			studentNames.map((studentName, index) => ({
-				studentName,
-				submittedAt: new Date(baseDate.getTime() - index * 6 * 60 * 60 * 1000),
-				status: index === 0 ? 'Submitted' : 'Reviewed',
-				score: 78 + index * 6
-			}));
+  if (!header) {
+    return res.status(401).json({ message: "No token provided" });
+  }
 
-		const buildExamResults = (studentNames, baseDate, totalMarks) =>
-			studentNames.map((studentName, index) => {
-				const score = Math.min(totalMarks, 68 + index * 10);
-				return {
-					studentName,
-					submittedAt: new Date(baseDate.getTime() - index * 8 * 60 * 60 * 1000),
-					score,
-					percentage: Math.round((score / totalMarks) * 100),
-					status: score >= totalMarks * 0.4 ? 'Passed' : 'Needs Review'
-				};
-			});
+  const token = header.split(" ")[1];
 
-		const courseCount = await Course.countDocuments();
-		if (courseCount === 0) {
-			const seededStudents = [
-				'Brenda M. Stroman',
-				'Mark J. Lopez',
-				'Doris J. Bartlett'
-			];
+  try {
+    const decoded = jwt.verify(token, SECRET_KEY);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: "Invalid token" });
+  }
+}
 
-			const courseA = await Course.create({
-				name: 'Web Development Fundamentals',
-				description: 'Learn the basics of web development with HTML, CSS, and JavaScript',
-				duration: 8,
-				students: 150,
-				published: true
-			});
+// ================= ROUTES =================
 
-			const courseB = await Course.create({
-				name: 'Advanced JavaScript',
-				description: 'Master advanced concepts in JavaScript for professional development',
-				duration: 12,
-				students: 120,
-				published: false
-			});
+// Home
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "../public/pages/dashboard.html"));
+});
 
-			await Assignment.create({
-				title: 'HTML & CSS Basics',
-				description: 'Create a responsive website layout using HTML5 and modern CSS3 techniques',
-				dueDate: new Date('2026-03-15'),
-				courseId: courseA._id,
-				submissions: buildAssignmentSubmissions(seededStudents, new Date('2026-03-14T15:00:00Z')),
-				submitted: 45,
-				total: 50,
-				late: 5,
-				notSubmitted: 0
-			});
+// ===== AUTH =====
 
-			await Assignment.create({
-				title: 'JavaScript Functions',
-				description: 'Write JavaScript functions to solve complex problems and demonstrate understanding',
-				dueDate: new Date('2026-03-20'),
-				courseId: courseB._id,
-				submissions: buildAssignmentSubmissions(seededStudents, new Date('2026-03-17T10:30:00Z')),
-				submitted: 38,
-				total: 50,
-				late: 2,
-				notSubmitted: 10
-			});
+// SIGNUP
+app.post("/signup", async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
 
-			await Exam.create({
-				title: 'Mid Term - Web Development',
-				date: new Date('2026-03-20'),
-				time: '10:00',
-				duration: 120,
-				totalMarks: 100,
-				passingScore: 40,
-				courseId: courseA._id,
-				results: buildExamResults(seededStudents, new Date('2026-03-16T12:00:00Z'), 100),
-				completed: 45,
-				inProgress: 3,
-				notAttended: 2,
-				active: true
-			});
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return res.json({ success: false, message: "User already exists" });
+    }
 
-			await Exam.create({
-				title: 'Quiz - JavaScript Basics',
-				date: new Date('2026-03-25'),
-				time: '14:00',
-				duration: 60,
-				totalMarks: 50,
-				passingScore: 25,
-				courseId: courseB._id,
-				results: buildExamResults(seededStudents, new Date('2026-03-17T09:15:00Z'), 50),
-				completed: 20,
-				inProgress: 5,
-				notAttended: 10,
-				active: false
-			});
+    const hash = await bcrypt.hash(password, 10);
 
-			await Student.create({
-				name: 'Brenda M. Stroman',
-				email: 'brenda@example.com',
-				progress: 75,
-				completedLessons: 6,
-				lastActive: new Date(),
-				status: 'Active'
-			});
+    const user = new User({
+      username,
+      email,
+      password: hash,
+    });
 
-			await Student.create({
-				name: 'Mark J. Lopez',
-				email: 'mark@example.com',
-				progress: 50,
-				completedLessons: 4,
-				lastActive: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-				status: 'Inactive'
-			});
+    await user.save();
 
-			console.log('✨ Seeded sample data');
-		}
+    res.json({ success: true });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Signup error" });
+  }
+});
 
-		const existingStudents = await Student.find().sort({ createdAt: 1 }).lean();
-		const studentNames = existingStudents.length > 0
-			? existingStudents.map((student) => student.name)
-			: ['Brenda M. Stroman', 'Mark J. Lopez', 'Doris J. Bartlett'];
+// LOGIN
+app.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
-		const existingAssignments = await Assignment.find();
-		for (const assignment of existingAssignments) {
-			if (!Array.isArray(assignment.submissions) || assignment.submissions.length === 0) {
-				assignment.submissions = buildAssignmentSubmissions(studentNames, assignment.dueDate || new Date());
-				await assignment.save();
-			}
-		}
+    const user = await User.findOne({ email });
 
-		const existingExams = await Exam.find();
-		for (const exam of existingExams) {
-			if (!Array.isArray(exam.results) || exam.results.length === 0) {
-				exam.results = buildExamResults(studentNames, exam.date || new Date(), exam.totalMarks || 100);
-				await exam.save();
-			}
-		}
-	})
-	.catch((err) => console.error('❌ MongoDB connection error:', err));
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
 
-// API routes
-app.use('/api/courses', require('./routes/courses'));
-app.use('/api/assignments', require('./routes/assignments'));
-app.use('/api/exams', require('./routes/exams'));
-app.use('/api/students', require('./routes/students'));
-app.use('/api/storage', require('./routes/storage'));
+    const match = await bcrypt.compare(password, user.password);
 
-// Serve frontend static files
-const frontendPath = path.join(__dirname, '..', '..', 'frontend', 'instructor-dashboard');
+    if (!match) {
+      return res.json({ success: false, message: "Wrong password" });
+    }
+
+    const token = jwt.sign(
+      { userId: user._id, username: user.username },
+      SECRET_KEY,
+      { expiresIn: "1h" }
+    );
+
+    res.json({
+      success: true,
+      token,
+      username: user.username,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: "Login error" });
+  }
+});
+
+// ===== API =====
+
+// COURSES (Protected)
+app.use("/api/courses", auth, require("./routes/courses"));
+
+// Other APIs
+app.get("/api/testimonials", async (req, res) => {
+  try {
+    const data = await Testimonial.find();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch testimonials" });
+  }
+});
+
+app.get("/api/faqs", async (req, res) => {
+  try {
+    const data = await Faq.find();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch FAQs" });
+  }
+});
+
+// Extra routes
+app.use("/api/assignments", require("./routes/assignments"));
+app.use("/api/exams", require("./routes/exams"));
+app.use("/api/students", require("./routes/students"));
+app.use("/api/storage", require("./routes/storage"));
+
+// ================= FRONTEND =================
+const frontendPath = path.join(__dirname, "..", "..", "frontend", "instructor-dashboard");
 app.use(express.static(frontendPath));
 
-// Ensure SPA routing works (Catch-all route)
+// SPA fallback
 app.get(/.*/, (req, res) => {
-	res.sendFile(path.join(frontendPath, 'index.html'));
+  res.sendFile(path.join(frontendPath, "index.html"));
 });
 
-const port = process.env.PORT || 4000;
-app.listen(port, () => {
-	console.log(`🚀 Server running on http://localhost:${port}`);
-});
+// ================= DB CONNECT + SERVER START =================
+mongoose
+  .connect(mongoUri)
+  .then(() => {
+    console.log("✅ MongoDB Connected");
+
+    app.listen(port, () => {
+      console.log(`🚀 Server running on http://localhost:${port}`);
+    });
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB connection error:", err);
+  });

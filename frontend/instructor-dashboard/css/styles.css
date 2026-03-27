@@ -59,6 +59,12 @@ body {
   font-weight: 700;
 }
 
+.logo-link {
+  text-decoration: none;
+  color: inherit;
+  display: inline-block;
+}
+
 .navbar {
   margin-bottom: 40px;
 }

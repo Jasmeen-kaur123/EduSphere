@@ -70,7 +70,6 @@
                                 <img src="https://ui-avatars.com/api/?name=Jasmeen&background=6C4AB6&color=fff&size=120" alt="Profile" class="profile-image">
                                 <div class="profile-info">
                                     <h2>Jasmeen</h2>
-                                    <p>Senior Instructor - Web Development</p>
                                     <p>jasmeen@edusphere.com</p>
                                 </div>
                                 <button class="btn-primary" id="editProfileBtn">Edit Profile</button>
@@ -197,6 +196,10 @@
                     <label for="assignmentCourse">Course</label>
                     <select id="assignmentCourse"></select>
                 </div>
+                <div class="form-group">
+                    <label for="assignmentQuestions">Questions (one per line)</label>
+                    <textarea id="assignmentQuestions" rows="5" placeholder="Question 1&#10;Question 2"></textarea>
+                </div>
                 <div class="form-actions">
                     <button type="button" class="btn-secondary modal-close-btn">Cancel</button>
                     <button type="submit" class="btn-primary">Create Assignment</button>
@@ -305,7 +308,6 @@
     <!-- Original component JS files (if needed) -->
     <script src="js/dashboard.js"></script>
     <script src="js/mycourses.js"></script>
-    <script src="js/assignments.js"></script>
     <script src="js/exams.js"></script>
 
     <!-- Component HTML Loading & App Init -->

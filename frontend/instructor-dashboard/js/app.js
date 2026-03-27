@@ -1,3 +1,13 @@
+// Check authentication and role
+window.addEventListener('load', function() {
+  const role = localStorage.getItem('role');
+  const token = localStorage.getItem('token');
+  
+  if (!token || role !== 'instructor') {
+    window.location.href = '/pages/login.html';
+  }
+});
+
 // Global user role (set to 'instructor' for this dashboard)
 const currentUserRole = 'instructor';
 

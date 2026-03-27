@@ -46,13 +46,29 @@ document.getElementById('editProfileModal')?.addEventListener('click', () => {
   }
 });
 
-// Logout
-document.querySelector('.footer-link.logout')?.addEventListener('click', (e) => {
-  e.preventDefault();
-  if (confirm('Are you sure you want to logout?')) {
-    showNotification('Logging out...', 'info');
+// Logout (delegated so it works even when sidebar is loaded dynamically)
+if (!window.__instructorLogoutBound) {
+  document.addEventListener('click', (e) => {
+    const logoutLink = e.target.closest('.footer-link.logout');
+    if (!logoutLink) return;
+
+    e.preventDefault();
+    if (!confirm('Are you sure you want to logout?')) return;
+
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('username');
+    localStorage.removeItem('email');
+    localStorage.removeItem('userEmail');
+
+    if (typeof showNotification === 'function') {
+      showNotification('Logged out successfully.', 'success');
+    }
+
     setTimeout(() => {
-      window.location.href = '/login';
-    }, 1000);
-  }
-});
+      window.location.href = '/pages/dashboard.html';
+    }, 300);
+  });
+
+  window.__instructorLogoutBound = true;
+}

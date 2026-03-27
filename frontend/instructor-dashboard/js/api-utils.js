@@ -74,6 +74,8 @@ async function saveCourseToBackend(courseId, courseData, isEdit = false) {
       name: courseData.name,
       description: courseData.description,
       duration: Number(courseData.duration),
+      instructor: courseData.instructor || 'Jasmeen',
+      category: courseData.category || 'General',
       students: courseData.students ?? 0,
       published: courseData.published ?? true
     };

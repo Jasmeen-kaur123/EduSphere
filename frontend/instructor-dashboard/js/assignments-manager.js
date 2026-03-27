@@ -12,11 +12,15 @@ function openAssignmentModal(mode = 'create', assignmentData = null) {
     document.getElementById('assignmentDescription').value = assignmentData.description;
     document.getElementById('assignmentDueDate').value = assignmentData.dueDate;
     document.getElementById('assignmentCourse').value = assignmentData.courseId;
+    document.getElementById('assignmentQuestions').value = Array.isArray(assignmentData.questions)
+      ? assignmentData.questions.map((q) => q.questionText || q).join('\n')
+      : '';
   } else {
     modalTitle.textContent = 'Create Assignment';
     submitButton.textContent = 'Create Assignment';
     assignmentIdInput.value = '';
     document.getElementById('assignmentForm').reset();
+    document.getElementById('assignmentQuestions').value = '';
   }
 
   openModal('assignmentModal');
@@ -138,9 +142,18 @@ function openSubmissionsModal(assignment) {
 function initializeAssignmentForm() {
   const assignmentForm = document.getElementById('assignmentForm');
   if (!assignmentForm) return;
+  if (assignmentForm.dataset.bound === 'true') return;
+  assignmentForm.dataset.bound = 'true';
 
-  assignmentForm.addEventListener('submit', (e) => {
+  assignmentForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (assignmentForm.dataset.submitting === 'true') return;
+    assignmentForm.dataset.submitting = 'true';
+
+    const submitBtn = assignmentForm.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
+
+    try {
 
     const assignmentId = document.getElementById('assignmentId').value;
     const isEdit = assignmentId && assignmentId.trim().length > 0;
@@ -149,20 +162,66 @@ function initializeAssignmentForm() {
     const description = document.getElementById('assignmentDescription').value;
     const dueDate = document.getElementById('assignmentDueDate').value;
     const courseId = document.getElementById('assignmentCourse').value;
+    const questionsInput = document.getElementById('assignmentQuestions').value;
+    const questions = questionsInput
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0)
+      .map((questionText) => ({ questionText }));
 
     const storedAssignments = JSON.parse(localStorage.getItem('assignments')) || {};
     const existing = storedAssignments[assignmentId] || {};
+
+    // Get course name for the assignment
+    let courseName = 'Unknown Course';
+    if (courseId) {
+      const courses = JSON.parse(localStorage.getItem('courses') || '[]');
+      const course = Array.isArray(courses) ? courses.find(c => (c.id || c._id) === courseId) : null;
+      if (course) courseName = course.name;
+    }
 
     const assignmentData = {
       title,
       description,
       dueDate,
       courseId,
+      courseName,
+      instructor: 'Jasmeen',
+      questions,
       submitted: existing.submitted ?? Math.floor(Math.random() * 40) + 10,
       total: existing.total ?? 50,
       late: existing.late ?? Math.floor(Math.random() * 10),
       notSubmitted: existing.notSubmitted ?? Math.floor(Math.random() * 10)
     };
+
+    // Save to backend
+    const apiPayload = {
+      title,
+      description,
+      dueDate,
+      courseId,
+      courseName,
+      instructor: 'Jasmeen',
+      questions
+    };
+
+      try {
+        if (isEdit && assignmentId) {
+          await fetch(`/api/assignments/${assignmentId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(apiPayload)
+          });
+        } else {
+          await fetch('/api/assignments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(apiPayload)
+          });
+        }
+      } catch (err) {
+        console.warn('Backend save failed, saved locally', err);
+      }
 
     const id = isEdit ? assignmentId : 'assignment_' + Date.now();
     saveAssignmentToStorage(id, assignmentData);
@@ -172,6 +231,10 @@ function initializeAssignmentForm() {
     e.target.reset();
     closeModal('assignmentModal');
 
-    showNotification(isEdit ? '✓ Assignment updated successfully!' : '✓ Assignment created successfully!', 'success');
+      showNotification(isEdit ? '✓ Assignment updated successfully!' : '✓ Assignment created successfully!', 'success');
+    } finally {
+      assignmentForm.dataset.submitting = 'false';
+      if (submitBtn) submitBtn.disabled = false;
+    }
   });
 }

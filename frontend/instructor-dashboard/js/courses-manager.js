@@ -121,22 +121,24 @@ async function openEnrollmentModal(courseId) {
   if (!course) {
     body.innerHTML = '<p>No course data available.</p>';
   } else {
-    const students = course.students || 0;
-    const fakeList = Array.from({ length: Math.min(students, 10) }, (_, idx) => ({
-      name: `Student ${idx + 1}`,
-      progress: Math.floor(Math.random() * 100)
-    }));
+    const enrolledStudents = course.enrolledStudents || [];
+    const totalStudents = enrolledStudents.length;
+    
+    const studentsList = enrolledStudents.length > 0 
+      ? enrolledStudents.map(s => `
+          <div class="enrollment-row">
+            <span><strong>${s.studentName}</strong></span>
+            <span>${s.studentEmail}</span>
+            <span style="font-size: 0.85em; color: #999;">${new Date(s.enrolledAt).toLocaleDateString()}</span>
+          </div>
+        `).join('')
+      : '<p style="text-align: center; color: #999;">No students enrolled yet</p>';
 
     body.innerHTML = `
       <h3>${course.name} - Enrolled Students</h3>
-      <p>Total students: <strong>${students}</strong></p>
+      <p>Total students: <strong>${totalStudents}</strong></p>
       <div class="enrollments-list">
-        ${fakeList.map(s => `
-          <div class="enrollment-row">
-            <span>${s.name}</span>
-            <span>${s.progress}%</span>
-          </div>
-        `).join('')}
+        ${studentsList}
       </div>
     `;
   }
@@ -204,6 +206,7 @@ function initializeCourseForm() {
       name: document.getElementById('courseName').value,
       description: document.getElementById('courseDescription').value,
       duration: Number(document.getElementById('courseDuration').value),
+      instructor: 'Jasmeen',
       students: Math.floor(Math.random() * 200) + 50,
       published: true
     };

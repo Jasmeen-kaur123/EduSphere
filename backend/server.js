@@ -14,7 +14,7 @@ app.use(express.urlencoded({ extended: true }));
 // MongoDB setup
 const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/edusphere';
 mongoose
-	.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
+	.connect(mongoUri)
 	.then(async () => {
 		console.log('✅ Connected to MongoDB');
 
@@ -115,25 +115,36 @@ mongoose
 	})
 	.catch((err) => console.error('❌ MongoDB connection error:', err));
 
+// Serve backend public files FIRST (signup, login, etc)
+const backendPublicPath = path.join(__dirname, 'public');
+app.use(express.static(backendPublicPath));
+
+// Serve instructor dashboard frontend
+const frontendPath = path.join(__dirname, '..', 'frontend', 'instructor-dashboard');
+app.use('/instructor-dashboard', express.static(frontendPath));
+
 // API routes
+app.use('/api/auth', require('./src/routes/auth'));
 app.use('/api/courses', require('./src/routes/courses'));
 app.use('/api/assignments', require('./src/routes/assignments'));
 app.use('/api/exams', require('./src/routes/exams'));
 app.use('/api/students', require('./src/routes/students'));
 app.use('/api/storage', require('./src/routes/storage'));
 
-// Serve frontend static files
-const frontendPath = path.join(__dirname, '..', 'frontend', 'instructor-dashboard');
-app.use(express.static(frontendPath, { index: false }));
+// Routes for instructor dashboard SPA
+app.get('/instructor-dashboard', (req, res) => {
+	res.sendFile(path.join(frontendPath, 'index.html'));
+});
 
-// ✅ HELP ROUTE ADD KARO (yahi missing hai)
+// Route for admin dashboard
+app.get('/admin-dashboard', (req, res) => {
+	res.sendFile(path.join(backendPublicPath, 'admin-dashboard.html'));
+});
+
+// Help page route
 app.get('/help-page', (req, res) => {
 	console.log("🔥 HELP PAGE HIT");
 	res.sendFile(path.join(frontendPath, 'help.html'));
-});
-// Ensure SPA routing works (Catch-all route)
-app.get(/.*/, (req, res) => {
-	res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
 const port = process.env.PORT || 4000;

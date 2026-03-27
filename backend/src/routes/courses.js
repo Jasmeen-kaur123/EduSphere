@@ -38,4 +38,43 @@ router.delete('/:id', async (req, res) => {
   res.json({ success: true });
 });
 
+// Enroll student in course
+router.post('/:id/enroll', async (req, res) => {
+  const { studentName, studentEmail } = req.body;
+  const courseId = req.params.id;
+  
+  if (!studentName || !studentEmail) {
+    return res.status(400).json({ error: 'Student name and email required' });
+  }
+  
+  try {
+    const course = await Course.findById(courseId);
+    if (!course) return res.status(404).json({ error: 'Course not found' });
+    
+    // Check if student already enrolled
+    const alreadyEnrolled = course.enrolledStudents.some(
+      s => s.studentEmail === studentEmail
+    );
+    
+    if (alreadyEnrolled) {
+      return res.status(400).json({ error: 'Student already enrolled in this course' });
+    }
+    
+    // Add student to enrolled list
+    course.enrolledStudents.push({
+      studentName,
+      studentEmail,
+      enrolledAt: new Date()
+    });
+    
+    // Update student count
+    course.students = course.enrolledStudents.length;
+    
+    await course.save();
+    res.json({ success: true, course });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

@@ -27,6 +27,14 @@
 <label>Password</label>
 <input type="password" id="password" placeholder="Enter password" required>
 
+<label>Role</label>
+<select id="role" required>
+	<option value="">Select a role</option>
+	<option value="admin">Admin</option>
+	<option value="instructor">Instructor</option>
+	<option value="student">Student</option>
+</select>
+
 <button class="btn">Create Account</button>
 
 <p id="error" style="color:red;margin-top:10px;"></p>
@@ -57,20 +65,34 @@ signupForm.addEventListener("submit", async function(e){
 	const name = document.getElementById("username").value;
 	const email = document.getElementById("email").value;
 	const password = document.getElementById("password").value;
+	const role = document.getElementById("role").value;
 
 	try {
-		const res = await fetch("/signup", {
+		const res = await fetch("/api/auth/signup", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json"
 			},
-			body: JSON.stringify({ username: name, email, password })
+			body: JSON.stringify({ username: name, email, password, role })
 		});
 
 		const data = await res.json();
 
 		if (data.success) {
-			window.location.href = "/pages/login.html";
+			// Redirect based on role
+			if (role === 'admin') {
+				// Store token if available
+				localStorage.setItem('token', data.token || '');
+				localStorage.setItem('role', 'admin');
+				window.location.href = '/admin-dashboard.html';
+			} else if (role === 'instructor') {
+				localStorage.setItem('token', data.token || '');
+				localStorage.setItem('role', 'instructor');
+				window.location.href = '/instructor-dashboard/index.html';
+			} else {
+				// Student - go to login
+				window.location.href = "/pages/login.html";
+			}
 			return;
 		}
 

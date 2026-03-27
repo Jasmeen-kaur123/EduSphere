@@ -14,7 +14,7 @@ app.use(express.urlencoded({ extended: true }));
 // MongoDB setup
 const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/edusphere';
 mongoose
-	.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
+	.connect(mongoUri)
 	.then(async () => {
 		console.log('✅ Connected to MongoDB');
 
@@ -24,9 +24,24 @@ mongoose
 		const Exam = require('./models/Exam');
 		const Student = require('./models/Student');
 
-		const buildAssignmentSubmissions = (studentNames, baseDate) =>
-			studentNames.map((studentName, index) => ({
-				studentName,
+		const defaultStudentProfiles = [
+			{ name: 'Brenda M. Stroman', email: 'brenda@example.com' },
+			{ name: 'Mark J. Lopez', email: 'mark@example.com' },
+			{ name: 'Doris J. Bartlett', email: 'doris@example.com' }
+		];
+
+		const getFallbackEmailFromName = (name, index = 0) => {
+			const base = String(name || `student-${index + 1}`)
+				.toLowerCase()
+				.replace(/[^a-z0-9]+/g, '.')
+				.replace(/^\.+|\.+$/g, '');
+			return `${base || `student-${index + 1}`}@example.com`;
+		};
+
+		const buildAssignmentSubmissions = (students, baseDate) =>
+			students.map((student, index) => ({
+				studentName: student.name,
+				studentEmail: student.email || getFallbackEmailFromName(student.name, index),
 				submittedAt: new Date(baseDate.getTime() - index * 6 * 60 * 60 * 1000),
 				status: index === 0 ? 'Submitted' : 'Reviewed',
 				score: 78 + index * 6
@@ -46,11 +61,7 @@ mongoose
 
 		const courseCount = await Course.countDocuments();
 		if (courseCount === 0) {
-			const seededStudents = [
-				'Brenda M. Stroman',
-				'Mark J. Lopez',
-				'Doris J. Bartlett'
-			];
+			const seededStudents = defaultStudentProfiles;
 
 			const courseA = await Course.create({
 				name: 'Web Development Fundamentals',
@@ -144,14 +155,41 @@ mongoose
 		}
 
 		const existingStudents = await Student.find().sort({ createdAt: 1 }).lean();
-		const studentNames = existingStudents.length > 0
-			? existingStudents.map((student) => student.name)
-			: ['Brenda M. Stroman', 'Mark J. Lopez', 'Doris J. Bartlett'];
+		const studentProfiles = existingStudents.length > 0
+			? existingStudents.map((student, index) => ({
+				name: student.name,
+				email: student.email || getFallbackEmailFromName(student.name, index)
+			}))
+			: defaultStudentProfiles;
+		const studentNameToEmail = new Map(
+			studentProfiles.map((student) => [student.name, student.email])
+		);
+		const studentNames = studentProfiles.map((student) => student.name);
 
 		const existingAssignments = await Assignment.find();
 		for (const assignment of existingAssignments) {
 			if (!Array.isArray(assignment.submissions) || assignment.submissions.length === 0) {
-				assignment.submissions = buildAssignmentSubmissions(studentNames, assignment.dueDate || new Date());
+				assignment.submissions = buildAssignmentSubmissions(studentProfiles, assignment.dueDate || new Date());
+				await assignment.save();
+				continue;
+			}
+
+			let updated = false;
+			assignment.submissions = assignment.submissions.map((submission, index) => {
+				const existingEmail = submission.studentEmail;
+				if (existingEmail) return submission;
+
+				updated = true;
+				const derivedEmail = studentNameToEmail.get(submission.studentName)
+					|| getFallbackEmailFromName(submission.studentName, index);
+
+				return {
+					...submission.toObject(),
+					studentEmail: derivedEmail
+				};
+			});
+
+			if (updated) {
 				await assignment.save();
 			}
 		}
@@ -166,21 +204,36 @@ mongoose
 	})
 	.catch((err) => console.error('❌ MongoDB connection error:', err));
 
+// Serve backend public files FIRST (signup, login, etc)
+const backendPublicPath = path.join(__dirname, '..', 'public');
+app.use(express.static(backendPublicPath));
+
+// Serve instructor dashboard frontend
+const frontendPath = path.join(__dirname, '..', '..', 'frontend', 'instructor-dashboard');
+app.use('/instructor-dashboard', express.static(frontendPath));
+
 // API routes
+app.use('/api/auth', require('./routes/auth'));
 app.use('/api/courses', require('./routes/courses'));
 app.use('/api/assignments', require('./routes/assignments'));
 app.use('/api/exams', require('./routes/exams'));
 app.use('/api/students', require('./routes/students'));
 app.use('/api/storage', require('./routes/storage'));
 
-// Serve frontend static files
-const frontendPath = path.join(__dirname, '..', '..', 'frontend', 'instructor-dashboard');
-app.use(express.static(frontendPath));
-
-
-// Ensure SPA routing works (Catch-all route)
-app.get(/.*/, (req, res) => {
+// Routes for instructor dashboard SPA
+app.get('/instructor-dashboard', (req, res) => {
 	res.sendFile(path.join(frontendPath, 'index.html'));
+});
+
+// Route for admin dashboard
+app.get('/admin-dashboard', (req, res) => {
+	res.sendFile(path.join(backendPublicPath, 'admin-dashboard.html'));
+});
+
+// Help page route
+app.get('/help-page', (req, res) => {
+	console.log("🔥 HELP PAGE HIT");
+	res.sendFile(path.join(frontendPath, 'help.html'));
 });
 
 const port = process.env.PORT || 4000;

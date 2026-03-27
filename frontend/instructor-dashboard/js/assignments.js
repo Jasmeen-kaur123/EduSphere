@@ -145,6 +145,12 @@ function openEditAssignmentModal(assignment) {
             document.getElementById('assignmentCourse').value = assignment.courseId;
         }
     });
+    const questionsField = document.getElementById('assignmentQuestions');
+    if (questionsField) {
+        questionsField.value = Array.isArray(assignment.questions)
+            ? assignment.questions.map((q) => q.questionText || q).join('\n')
+            : '';
+    }
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
 }
@@ -205,10 +211,17 @@ function setupAssignmentForm() {
         const description = document.getElementById('assignmentDescription').value;
         const dueDate = document.getElementById('assignmentDueDate').value;
         const courseId = document.getElementById('assignmentCourse').value;
+        const questionsInput = (document.getElementById('assignmentQuestions')?.value || '');
+        const questions = questionsInput
+            .split('\n')
+            .map((line) => line.trim())
+            .filter((line) => line.length > 0)
+            .map((questionText) => ({ questionText }));
         const payload = {
             title,
             description,
-            dueDate
+            dueDate,
+            questions
         };
         if (courseId && courseId.trim().length > 0) {
             payload.courseId = courseId;
@@ -243,6 +256,8 @@ function initAssignmentsSection() {
                 document.getElementById('assignmentModalTitle').textContent = 'Create Assignment';
                 document.getElementById('assignmentId').value = '';
                 document.getElementById('assignmentForm').reset();
+                const questionsField = document.getElementById('assignmentQuestions');
+                if (questionsField) questionsField.value = '';
                 populateCourseDropdown();
                 document.getElementById('assignmentModal').classList.add('active');
                 document.body.style.overflow = 'hidden';

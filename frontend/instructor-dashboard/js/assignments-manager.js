@@ -4,26 +4,62 @@ function openAssignmentModal(mode = 'create', assignmentData = null) {
   const submitButton = document.querySelector('#assignmentForm button[type="submit"]');
   const assignmentIdInput = document.getElementById('assignmentId');
 
-  if (mode === 'edit' && assignmentData) {
-    modalTitle.textContent = 'Edit Assignment';
-    submitButton.textContent = 'Save Changes';
-    assignmentIdInput.value = assignmentData.id;
-    document.getElementById('assignmentTitle').value = assignmentData.title;
-    document.getElementById('assignmentDescription').value = assignmentData.description;
-    document.getElementById('assignmentDueDate').value = assignmentData.dueDate;
-    document.getElementById('assignmentCourse').value = assignmentData.courseId;
-    document.getElementById('assignmentQuestions').value = Array.isArray(assignmentData.questions)
-      ? assignmentData.questions.map((q) => q.questionText || q).join('\n')
-      : '';
-  } else {
-    modalTitle.textContent = 'Create Assignment';
-    submitButton.textContent = 'Create Assignment';
-    assignmentIdInput.value = '';
-    document.getElementById('assignmentForm').reset();
-    document.getElementById('assignmentQuestions').value = '';
-  }
+  populateAssignmentCourseDropdown().then(() => {
+    if (mode === 'edit' && assignmentData) {
+      modalTitle.textContent = 'Edit Assignment';
+      submitButton.textContent = 'Save Changes';
+      assignmentIdInput.value = assignmentData._id || assignmentData.id || '';
+      document.getElementById('assignmentTitle').value = assignmentData.title || '';
+      document.getElementById('assignmentDescription').value = assignmentData.description || '';
+      document.getElementById('assignmentDueDate').value = formatDateYMD(assignmentData.dueDate);
+      document.getElementById('assignmentCourse').value = assignmentData.courseId ? String(assignmentData.courseId) : '';
+      document.getElementById('assignmentQuestions').value = Array.isArray(assignmentData.questions)
+        ? assignmentData.questions.map((q) => q.questionText || q).join('\n')
+        : '';
+    } else {
+      modalTitle.textContent = 'Create Assignment';
+      submitButton.textContent = 'Create Assignment';
+      assignmentIdInput.value = '';
+      document.getElementById('assignmentForm').reset();
+      document.getElementById('assignmentQuestions').value = '';
+    }
 
-  openModal('assignmentModal');
+    openModal('assignmentModal');
+  });
+}
+
+async function populateAssignmentCourseDropdown() {
+  const select = document.getElementById('assignmentCourse');
+  if (!select) return;
+
+  while (select.firstChild) select.removeChild(select.firstChild);
+
+  const defaultOpt = document.createElement('option');
+  defaultOpt.value = '';
+  defaultOpt.textContent = '-- None --';
+  select.appendChild(defaultOpt);
+
+  try {
+    const courses = await fetchCourses();
+    if (!Array.isArray(courses)) return;
+
+    const seen = new Set();
+    courses.forEach((course) => {
+      const id = course?._id || course?.id;
+      if (!id) return;
+
+      const normalizedId = String(id);
+      if (seen.has(normalizedId)) return;
+      seen.add(normalizedId);
+
+      const opt = document.createElement('option');
+      opt.value = normalizedId;
+      opt.textContent = course.name || course.title || normalizedId;
+      select.appendChild(opt);
+    });
+  } catch (err) {
+    console.warn('Unable to populate assignment course dropdown', err);
+  }
 }
 
 // Expose to global for dynamic event handlers
@@ -42,61 +78,55 @@ function removeAssignmentFromStorage(assignmentId) {
   localStorage.setItem('assignments', JSON.stringify(assignments));
 }
 
+function formatDateYMD(dateValue) {
+  if (!dateValue) return '';
+
+  const parsed = new Date(dateValue);
+  if (Number.isNaN(parsed.getTime())) {
+    const text = String(dateValue);
+    return text.length >= 10 ? text.slice(0, 10) : text;
+  }
+
+  return parsed.toISOString().slice(0, 10);
+}
+
 function loadAssignmentsFromStorage() {
+  return (async () => {
+  let backendAssignments = [];
+  try {
+    backendAssignments = await apiFetch('/api/assignments');
+  } catch (err) {
+    backendAssignments = [];
+  }
+
   const storedAssignments = JSON.parse(localStorage.getItem('assignments')) || {};
   const container = document.querySelector('.assignments-container');
 
-  // Seed default assignments if none exist
-  if (Object.keys(storedAssignments).length === 0) {
-    const defaultAssignments = [
-      {
-        title: 'HTML & CSS Basics',
-        description: 'Create a responsive website layout using HTML5 and modern CSS3 techniques',
-        dueDate: '2026-03-15',
-        courseId: 'course_1',
-        submitted: 45,
-        total: 50,
-        late: 5,
-        notSubmitted: 0
-      },
-      {
-        title: 'JavaScript Functions',
-        description: 'Write JavaScript functions to solve complex problems and demonstrate understanding',
-        dueDate: '2026-03-20',
-        courseId: 'course_2',
-        submitted: 38,
-        total: 50,
-        late: 2,
-        notSubmitted: 10
-      }
-    ];
-
-    defaultAssignments.forEach((assignment) => {
-      const id = 'assignment_' + Date.now() + Math.random().toString(16).slice(2);
-      storedAssignments[id] = assignment;
-    });
-    localStorage.setItem('assignments', JSON.stringify(storedAssignments));
-  }
+  const assignmentsList = Array.isArray(backendAssignments) && backendAssignments.length > 0
+    ? backendAssignments
+    : Object.entries(storedAssignments).map(([id, data]) => ({ id, ...data }));
 
   // Rebuild the list
   if (container) {
     container.querySelectorAll('.assignment-card').forEach(card => card.remove());
 
-    Object.entries(storedAssignments).forEach(([assignmentId, data]) => {
+    assignmentsList.forEach((data) => {
+      const assignmentId = data._id || data.id;
+      if (!assignmentId) return;
       const card = document.createElement('div');
       card.className = 'assignment-card';
       card.id = assignmentId;
       card.innerHTML = `
         <div class="assignment-header">
           <h3>${data.title}</h3>
-          <span class="due-date">Due: ${data.dueDate}</span>
+          <span class="due-date">Due: ${formatDateYMD(data.dueDate)}</span>
         </div>
         <div class="assignment-info">
           <p>${data.description}</p>
           <div class="assignment-stats">
-            <span>📤 ${data.submitted}/${data.total} Submitted</span>
-            <span>⏰ ${data.late} Late</span>
-            <span>❌ ${data.notSubmitted} Not Submitted</span>
+            <span>📤 ${data.submitted || 0}/${data.total || 0} Submitted</span>
+            <span>⏰ ${data.late || 0} Late</span>
+            <span>❌ ${data.notSubmitted || 0} Not Submitted</span>
           </div>
         </div>
         <div class="assignment-actions">
@@ -118,24 +148,158 @@ function loadAssignmentsFromStorage() {
 
       card.querySelector('.delete-assignment')?.addEventListener('click', () => {
         if (confirm('Are you sure you want to delete this assignment?')) {
-          removeAssignmentFromStorage(assignmentId);
-          loadAssignmentsFromStorage();
-          showNotification('Assignment deleted successfully!', 'success');
+          (async () => {
+            try {
+              await apiFetch(`/api/assignments/${assignmentId}`, { method: 'DELETE' });
+            } catch (err) {
+              removeAssignmentFromStorage(assignmentId);
+            }
+            await loadAssignmentsFromStorage();
+            showNotification('Assignment deleted successfully!', 'success');
+          })();
         }
       });
     });
   }
+  })();
 }
 
-function openSubmissionsModal(assignment) {
+async function openSubmissionsModal(assignment) {
   const modal = document.getElementById('submissionsModal');
+  if (!modal) return;
+
   const header = modal.querySelector('.modal-header h2');
+  const body = document.getElementById('submissionsBody');
+  const assignmentId = assignment?._id || assignment?.id;
 
   if (header) {
     header.textContent = `${assignment.title} - Submissions`;
   }
 
+  if (body) {
+    body.innerHTML = '<p>Loading latest submissions...</p>';
+  }
+
   openModal('submissionsModal');
+
+  try {
+    const assignments = await apiFetch('/api/assignments');
+    const latest = Array.isArray(assignments)
+      ? assignments.find((item) => String(item._id || item.id) === String(assignmentId))
+      : null;
+
+    const activeAssignment = latest || assignment;
+    const submissions = Array.isArray(activeAssignment?.submissions) ? activeAssignment.submissions : [];
+
+    let enrolledEmails = new Set();
+    if (activeAssignment?.courseId || activeAssignment?.courseName) {
+      const courses = await apiFetch('/api/courses');
+      const relatedCourse = Array.isArray(courses)
+        ? courses.find((course) => {
+            const courseId = String(course?._id || course?.id || '');
+            const assignmentCourseId = String(activeAssignment?.courseId || '');
+            if (courseId && assignmentCourseId && courseId === assignmentCourseId) return true;
+            return String(course?.name || '') === String(activeAssignment?.courseName || '');
+          })
+        : null;
+
+      if (relatedCourse) {
+        enrolledEmails = new Set(
+          (Array.isArray(relatedCourse.enrolledStudents) ? relatedCourse.enrolledStudents : [])
+            .map((student) => String(student?.studentEmail || '').trim().toLowerCase())
+            .filter(Boolean)
+        );
+      }
+    }
+
+    const filteredSubmissions = enrolledEmails.size > 0
+      ? submissions.filter((submission) => enrolledEmails.has(String(submission?.studentEmail || '').trim().toLowerCase()))
+      : submissions;
+
+    const dueDate = activeAssignment?.dueDate ? new Date(activeAssignment.dueDate) : null;
+    const hasDueDate = dueDate && !Number.isNaN(dueDate.getTime());
+
+    const completed = filteredSubmissions.length;
+    const late = filteredSubmissions.filter((submission) => {
+      const submittedAt = submission?.submittedAt ? new Date(submission.submittedAt) : null;
+      if (!hasDueDate || !submittedAt || Number.isNaN(submittedAt.getTime())) return false;
+      return submittedAt > dueDate;
+    }).length;
+    const total = enrolledEmails.size > 0 ? enrolledEmails.size : Number(activeAssignment?.total || 0);
+    const notSubmitted = Math.max(total - completed, 0);
+
+    const latestSubmissions = filteredSubmissions
+      .slice()
+      .sort((a, b) => new Date(b?.submittedAt || 0) - new Date(a?.submittedAt || 0))
+      .slice(0, 8);
+
+    const escapeHtml = (value) => String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+    const submissionsHtml = latestSubmissions.length > 0
+      ? latestSubmissions.map((submission, index) => {
+          const submittedAt = submission?.submittedAt ? new Date(submission.submittedAt) : null;
+          const submittedText = submittedAt && !Number.isNaN(submittedAt.getTime())
+            ? submittedAt.toLocaleString()
+            : 'N/A';
+
+          const answers = Array.isArray(submission?.answers) ? submission.answers : [];
+          const answersHtml = answers.length > 0
+            ? answers.map((answer, answerIndex) => `
+                <div style="margin-bottom:10px;padding:8px;border:1px solid #eee;border-radius:6px;">
+                  <p style="margin:0 0 4px;"><strong>Q${answerIndex + 1}:</strong> ${escapeHtml(answer?.questionText)}</p>
+                  <p style="margin:0;color:#444;"><strong>Answer:</strong> ${escapeHtml(answer?.answerText)}</p>
+                </div>
+              `).join('')
+            : '<p style="margin:8px 0 0;color:#666;">No answers available for this submission.</p>';
+
+          return `
+            <div style="padding:10px 0;border-top:1px solid #eee;">
+              <p style="margin:0;"><strong>${submission.studentName || 'Student'}</strong> (${submission.studentEmail || 'No email'})</p>
+              <p style="margin:4px 0 0;color:#666;">Submitted: ${submittedText}</p>
+              <button type="button" class="btn-secondary view-answers-btn" data-target="submissionAnswers_${index}" style="margin-top:8px;">View Answers</button>
+              <div id="submissionAnswers_${index}" style="display:none;margin-top:10px;">
+                ${answersHtml}
+              </div>
+            </div>
+          `;
+        }).join('')
+      : '<p style="margin-top:12px;color:#666;">No submissions yet.</p>';
+
+    if (body) {
+      body.innerHTML = `
+        <div class="exam-results">
+          <p><strong>Completed:</strong> ${completed}${total > 0 ? ` / ${total}` : ''}</p>
+          <p><strong>Late:</strong> ${late}</p>
+          <p><strong>Not Submitted:</strong> ${notSubmitted}</p>
+        </div>
+        <div style="margin-top:12px;">
+          <h4 style="margin:0 0 8px;">Recent Submission Activity</h4>
+          ${submissionsHtml}
+        </div>
+      `;
+
+      body.querySelectorAll('.view-answers-btn').forEach((button) => {
+        button.addEventListener('click', () => {
+          const targetId = button.getAttribute('data-target');
+          const detail = targetId ? body.querySelector(`#${targetId}`) : null;
+          if (!detail) return;
+
+          const isHidden = detail.style.display === 'none';
+          detail.style.display = isHidden ? 'block' : 'none';
+          button.textContent = isHidden ? 'Hide Answers' : 'View Answers';
+        });
+      });
+    }
+  } catch (err) {
+    if (body) {
+      body.innerHTML = '<p style="color:#c0392b;">Unable to load latest submissions right now.</p>';
+    }
+  }
 }
 
 // Assignment Form Submission
@@ -169,15 +333,16 @@ function initializeAssignmentForm() {
       .filter((line) => line.length > 0)
       .map((questionText) => ({ questionText }));
 
-    const storedAssignments = JSON.parse(localStorage.getItem('assignments')) || {};
-    const existing = storedAssignments[assignmentId] || {};
-
     // Get course name for the assignment
     let courseName = 'Unknown Course';
     if (courseId) {
-      const courses = JSON.parse(localStorage.getItem('courses') || '[]');
-      const course = Array.isArray(courses) ? courses.find(c => (c.id || c._id) === courseId) : null;
-      if (course) courseName = course.name;
+      try {
+        const courses = await fetchCourses();
+        const course = Array.isArray(courses)
+          ? courses.find((c) => String(c.id || c._id) === String(courseId))
+          : null;
+        if (course?.name) courseName = course.name;
+      } catch {}
     }
 
     const assignmentData = {
@@ -188,10 +353,10 @@ function initializeAssignmentForm() {
       courseName,
       instructor: 'Jasmeen',
       questions,
-      submitted: existing.submitted ?? Math.floor(Math.random() * 40) + 10,
-      total: existing.total ?? 50,
-      late: existing.late ?? Math.floor(Math.random() * 10),
-      notSubmitted: existing.notSubmitted ?? Math.floor(Math.random() * 10)
+      submitted: 0,
+      total: 0,
+      late: 0,
+      notSubmitted: 0
     };
 
     // Save to backend
@@ -206,26 +371,34 @@ function initializeAssignmentForm() {
     };
 
       try {
+        let savedAssignment = null;
         if (isEdit && assignmentId) {
-          await fetch(`/api/assignments/${assignmentId}`, {
+          savedAssignment = await apiFetch(`/api/assignments/${assignmentId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(apiPayload)
           });
         } else {
-          await fetch('/api/assignments', {
+          savedAssignment = await apiFetch('/api/assignments', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(apiPayload)
           });
         }
+
+        if (savedAssignment) {
+          const savedId = savedAssignment._id || savedAssignment.id;
+          if (savedId) {
+            saveAssignmentToStorage(savedId, { ...assignmentData, ...savedAssignment });
+          }
+        }
       } catch (err) {
         console.warn('Backend save failed, saved locally', err);
+        const offlineId = isEdit && assignmentId ? assignmentId : 'assignment_' + Date.now();
+        saveAssignmentToStorage(offlineId, assignmentData);
       }
 
-    const id = isEdit ? assignmentId : 'assignment_' + Date.now();
-    saveAssignmentToStorage(id, assignmentData);
-    loadAssignmentsFromStorage();
+    await loadAssignmentsFromStorage();
 
     // Reset form
     e.target.reset();

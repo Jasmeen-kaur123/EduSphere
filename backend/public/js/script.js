@@ -20,6 +20,18 @@ document.addEventListener('DOMContentLoaded', function () {
     return assignment.submissions.some((s) => s?.studentEmail === currentStudentEmail);
   }
 
+  function formatDateYMD(dateValue) {
+    if (!dateValue) return '';
+
+    const parsed = new Date(dateValue);
+    if (Number.isNaN(parsed.getTime())) {
+      const text = String(dateValue);
+      return text.length >= 10 ? text.slice(0, 10) : text;
+    }
+
+    return parsed.toISOString().slice(0, 10);
+  }
+
   function ensureAssignmentStartModal() {
     if (document.getElementById('assignmentStartModal')) return;
 
@@ -92,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function () {
           <p>${escapeHtml(a.description)}</p>
           <p><strong>Course:</strong> ${escapeHtml(a.courseName)}</p>
           <p><strong>Instructor:</strong> ${escapeHtml(a.instructor)}</p>
-          <p><strong>Due Date:</strong> ${new Date(a.dueDate).toLocaleDateString()}</p>
+          <p><strong>Due Date:</strong> ${formatDateYMD(a.dueDate)}</p>
           <p><strong>Status:</strong> ${statusLabel}</p>
           <button class="btn start-assignment-btn" data-assignment-id="${assignmentId}" ${buttonDisabled}>${buttonLabel}</button>
         </div>

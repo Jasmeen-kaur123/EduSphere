@@ -34,10 +34,22 @@ async function renderDashboardStats() {
     const safeExams = Array.isArray(exams) ? exams : [];
     const safeStudents = Array.isArray(students) ? students : [];
 
+    const uniqueEnrolledStudentEmails = new Set();
+    safeCourses.forEach((course) => {
+        const enrolled = Array.isArray(course?.enrolledStudents) ? course.enrolledStudents : [];
+        enrolled.forEach((student) => {
+            const email = String(student?.studentEmail || '').trim().toLowerCase();
+            if (email) uniqueEnrolledStudentEmails.add(email);
+        });
+    });
+
+    const computedStudentsCount = uniqueEnrolledStudentEmails.size;
+    const totalStudentsCount = computedStudentsCount > 0 ? computedStudentsCount : safeStudents.length;
+
     document.getElementById('statCourses').textContent = safeCourses.length;
     document.getElementById('statAssignments').textContent = safeAssignments.length;
     document.getElementById('statExams').textContent = safeExams.length;
-    document.getElementById('statStudents').textContent = safeStudents.length;
+    document.getElementById('statStudents').textContent = totalStudentsCount;
 
     initQuickActions();
 

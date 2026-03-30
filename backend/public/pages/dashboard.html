@@ -58,7 +58,7 @@ border-radius:10px;
 
 <h1 class="logo"><a href="/pages/dashboard.html" class="logo-link">EduSphere</a></h1>
 
-<div class="nav">
+<div class="nav" id="sidebarNav">
 <a href="/pages/dashboard.html">Dashboard</a>
 <a href="/pages/courses.html">My Courses</a>
 <a href="/pages/assignments.html">Assignments</a>
@@ -313,6 +313,7 @@ Login to access courses, assignments and track your progress.
 // CHECK LOGIN STATUS
 
 const user = localStorage.getItem("username")
+const sidebarNav = document.getElementById("sidebarNav")
 
 if(user){
 
@@ -325,6 +326,16 @@ document.getElementById("studentDashboard").style.display="block"
 document.getElementById("authButtons").style.display="none"
 
 document.getElementById("logoutBtn").style.display="inline-block"
+
+if (sidebarNav) {
+sidebarNav.style.display = ""
+}
+
+} else {
+
+if (sidebarNav) {
+sidebarNav.style.display = "none"
+}
 
 }
 

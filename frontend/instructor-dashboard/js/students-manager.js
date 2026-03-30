@@ -3,6 +3,66 @@ async function loadStudentsFromStorage() {
   try {
     // Fetch all courses to get enrolled students
     const courses = await fetchCourses();
+    let assignments = [];
+    let exams = [];
+
+    try {
+      assignments = await apiFetch('/api/assignments');
+      if (!Array.isArray(assignments)) assignments = [];
+    } catch {
+      assignments = [];
+    }
+
+    try {
+      exams = await apiFetch('/api/exams');
+      if (!Array.isArray(exams)) exams = [];
+    } catch {
+      exams = [];
+    }
+
+    const totalWorkItems = assignments.length + exams.length;
+
+    const assignmentSubmissionByEmail = new Map();
+    const assignmentLastActiveByEmail = new Map();
+
+    assignments.forEach((assignment) => {
+      const submissions = Array.isArray(assignment?.submissions) ? assignment.submissions : [];
+      submissions.forEach((submission) => {
+        const email = String(submission?.studentEmail || '').trim().toLowerCase();
+        if (!email) return;
+
+        assignmentSubmissionByEmail.set(email, (assignmentSubmissionByEmail.get(email) || 0) + 1);
+
+        const submittedAt = submission?.submittedAt ? new Date(submission.submittedAt) : null;
+        if (submittedAt && !Number.isNaN(submittedAt.getTime())) {
+          const current = assignmentLastActiveByEmail.get(email);
+          if (!current || submittedAt > current) {
+            assignmentLastActiveByEmail.set(email, submittedAt);
+          }
+        }
+      });
+    });
+
+    const examCompletionByStudentKey = new Map();
+    const examLastActiveByStudentKey = new Map();
+
+    exams.forEach((exam) => {
+      const results = Array.isArray(exam?.results) ? exam.results : [];
+      results.forEach((result) => {
+        const keyByName = String(result?.studentName || '').trim().toLowerCase();
+        if (!keyByName) return;
+
+        examCompletionByStudentKey.set(keyByName, (examCompletionByStudentKey.get(keyByName) || 0) + 1);
+
+        const submittedAt = result?.submittedAt ? new Date(result.submittedAt) : null;
+        if (submittedAt && !Number.isNaN(submittedAt.getTime())) {
+          const current = examLastActiveByStudentKey.get(keyByName);
+          if (!current || submittedAt > current) {
+            examLastActiveByStudentKey.set(keyByName, submittedAt);
+          }
+        }
+      });
+    });
     
     // Extract all enrolled students from courses
     const allEnrolledStudents = [];
@@ -12,15 +72,37 @@ async function loadStudentsFromStorage() {
       if (course.enrolledStudents && Array.isArray(course.enrolledStudents)) {
         course.enrolledStudents.forEach(student => {
           // Use email as unique key to avoid duplicates
-          const key = student.studentEmail;
+          const key = String(student.studentEmail || '').trim().toLowerCase();
+          if (!key) return;
+          const nameKey = String(student.studentName || '').trim().toLowerCase();
+
+          const assignmentCompleted = assignmentSubmissionByEmail.get(key) || 0;
+          const examCompleted = examCompletionByStudentKey.get(nameKey) || 0;
+          const completedWork = assignmentCompleted + examCompleted;
+          const progress = totalWorkItems > 0
+            ? Math.min(100, Math.round((completedWork / totalWorkItems) * 100))
+            : 0;
+
+          const assignmentLastActive = assignmentLastActiveByEmail.get(key);
+          const examLastActive = examLastActiveByStudentKey.get(nameKey);
+          const enrolledAt = student.enrolledAt ? new Date(student.enrolledAt) : null;
+          const candidates = [assignmentLastActive, examLastActive, enrolledAt]
+            .filter((date) => date instanceof Date && !Number.isNaN(date.getTime()));
+          const lastActive = candidates.length > 0
+            ? new Date(Math.max(...candidates.map((date) => date.getTime())))
+            : new Date();
+
+          const daysSinceActive = Math.floor((Date.now() - lastActive.getTime()) / (1000 * 60 * 60 * 24));
+          const status = daysSinceActive <= 30 ? 'Active' : 'Inactive';
+
           if (!studentMap.has(key)) {
             studentMap.set(key, {
               name: student.studentName,
-              email: student.studentEmail,
-              progress: Math.floor(Math.random() * 100),
-              completedLessons: Math.floor(Math.random() * 10),
-              lastActive: student.enrolledAt ? new Date(student.enrolledAt) : new Date(),
-              status: 'Active',
+              email: key,
+              progress,
+              completedLessons: completedWork,
+              lastActive,
+              status,
               courses: [course.name]
             });
           } else {
@@ -29,6 +111,14 @@ async function loadStudentsFromStorage() {
             if (!existingStudent.courses.includes(course.name)) {
               existingStudent.courses.push(course.name);
             }
+
+            // Merge latest progress/activity for students in multiple courses
+            existingStudent.completedLessons = Math.max(existingStudent.completedLessons, completedWork);
+            existingStudent.progress = Math.max(existingStudent.progress, progress);
+            if (lastActive > new Date(existingStudent.lastActive)) {
+              existingStudent.lastActive = lastActive;
+            }
+            existingStudent.status = status;
           }
         });
       }

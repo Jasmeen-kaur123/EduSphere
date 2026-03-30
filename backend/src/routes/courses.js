@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Course = require('../models/Course');
+const Student = require('../models/Student');
 
 // List all courses
 router.get('/', async (req, res) => {
@@ -17,8 +18,16 @@ router.get('/:id', async (req, res) => {
 
 // Create course
 router.post('/', async (req, res) => {
-  const { name, description, duration, students, published } = req.body;
-  const course = new Course({ name, description, duration, students, published });
+  const { name, description, duration, students, published, instructor, category } = req.body;
+  const course = new Course({
+    name,
+    description,
+    duration,
+    students,
+    published,
+    instructor: instructor || 'Unknown Instructor',
+    category: category || 'General'
+  });
   await course.save();
   res.status(201).json(course);
 });
@@ -50,6 +59,25 @@ router.post('/:id/enroll', async (req, res) => {
   try {
     const course = await Course.findById(courseId);
     if (!course) return res.status(404).json({ error: 'Course not found' });
+
+    // Keep students collection in sync with enrollments
+    await Student.findOneAndUpdate(
+      { email: studentEmail },
+      {
+        $set: {
+          name: studentName,
+          email: studentEmail,
+          lastActive: new Date(),
+          status: 'Active'
+        },
+        $setOnInsert: {
+          progress: 0,
+          completedLessons: 0,
+          createdAt: new Date()
+        }
+      },
+      { new: true, upsert: true }
+    );
     
     // Check if student already enrolled
     const alreadyEnrolled = course.enrolledStudents.some(

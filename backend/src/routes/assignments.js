@@ -26,13 +26,79 @@ async function isStudentEnrolledInAssignmentCourse(assignment, studentEmail) {
   return false;
 }
 
+async function getEnrolledEmailsForAssignment(assignment) {
+  let course = null;
+
+  if (assignment.courseId) {
+    course = await Course.findById(assignment.courseId, { enrolledStudents: 1 }).lean();
+  }
+
+  if (!course && assignment.courseName) {
+    course = await Course.findOne(
+      { name: assignment.courseName },
+      { enrolledStudents: 1 }
+    ).lean();
+  }
+
+  const enrolledEmails = new Set(
+    (course?.enrolledStudents || [])
+      .map((student) => String(student?.studentEmail || '').trim().toLowerCase())
+      .filter(Boolean)
+  );
+
+  return enrolledEmails;
+}
+
+async function withDynamicAssignmentStats(assignmentDoc) {
+  const assignment = assignmentDoc.toObject ? assignmentDoc.toObject() : assignmentDoc;
+  const enrolledEmails = await getEnrolledEmailsForAssignment(assignment);
+
+  const validSubmissions = Array.isArray(assignment.submissions)
+    ? assignment.submissions.filter((submission) => {
+        const email = String(submission?.studentEmail || '').trim().toLowerCase();
+        return email && enrolledEmails.has(email);
+      })
+    : [];
+
+  const submittedEmails = new Set(
+    validSubmissions
+      .map((submission) => String(submission?.studentEmail || '').trim().toLowerCase())
+      .filter(Boolean)
+  );
+
+  const dueDate = assignment.dueDate ? new Date(assignment.dueDate) : null;
+  const hasValidDueDate = Boolean(dueDate && !Number.isNaN(dueDate.getTime()));
+
+  let lateCount = 0;
+  for (const submission of validSubmissions) {
+    const submittedAt = submission?.submittedAt ? new Date(submission.submittedAt) : null;
+    if (!hasValidDueDate || !submittedAt || Number.isNaN(submittedAt.getTime())) continue;
+    if (submittedAt > dueDate) lateCount += 1;
+  }
+
+  const total = enrolledEmails.size;
+  const submitted = submittedEmails.size;
+  const notSubmitted = Math.max(total - submitted, 0);
+
+  return {
+    ...assignment,
+    submitted,
+    total,
+    late: lateCount,
+    notSubmitted
+  };
+}
+
 router.get('/', async (req, res) => {
   try {
     const { studentEmail } = req.query;
 
     if (!studentEmail) {
       const assignments = await Assignment.find().sort({ createdAt: -1 });
-      return res.json(assignments);
+      const assignmentsWithStats = await Promise.all(
+        assignments.map((assignment) => withDynamicAssignmentStats(assignment))
+      );
+      return res.json(assignmentsWithStats);
     }
 
     const enrolledCourses = await Course.find(
@@ -72,7 +138,11 @@ router.get('/', async (req, res) => {
       uniqueAssignments.push(assignment);
     }
 
-    return res.json(uniqueAssignments);
+    const uniqueAssignmentsWithStats = await Promise.all(
+      uniqueAssignments.map((assignment) => withDynamicAssignmentStats(assignment))
+    );
+
+    return res.json(uniqueAssignmentsWithStats);
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

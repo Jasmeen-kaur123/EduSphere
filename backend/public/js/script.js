@@ -3,8 +3,26 @@
 document.addEventListener('DOMContentLoaded', function () {
 
   const token = localStorage.getItem("token");
-  const currentStudentName = localStorage.getItem('username') || 'Student';
-  const currentStudentEmail = localStorage.getItem('userEmail') || localStorage.getItem('email') || '';
+  const username = localStorage.getItem('username');
+  const isLoggedIn = Boolean(token && username);
+  const currentStudentName = username || 'Student';
+  const currentStudentEmail = isLoggedIn
+    ? (localStorage.getItem('userEmail') || localStorage.getItem('email') || '')
+    : '';
+
+  // Show guest-friendly naming across nav and courses page title.
+  document.querySelectorAll('[data-nav-courses]').forEach((link) => {
+    link.textContent = isLoggedIn ? 'My Courses' : 'Courses';
+  });
+
+  document.querySelectorAll('[data-nav-assignments]').forEach((link) => {
+    link.style.display = isLoggedIn ? '' : 'none';
+  });
+
+  const coursesPageTitle = document.getElementById('coursesPageTitle');
+  if (coursesPageTitle) {
+    coursesPageTitle.textContent = isLoggedIn ? 'My Courses' : 'Courses';
+  }
 
   function escapeHtml(value) {
     return String(value || '')
@@ -242,7 +260,9 @@ document.addEventListener('DOMContentLoaded', function () {
           return;
         }
 
-        const studentEmail = localStorage.getItem('userEmail');
+        const studentEmail = isLoggedIn
+          ? (localStorage.getItem('userEmail') || localStorage.getItem('email') || '')
+          : '';
         
         const html = courses.map(c => {
           const isEnrolled = studentEmail && c.enrolledStudents && c.enrolledStudents.some(s => s.studentEmail === studentEmail);
@@ -286,7 +306,9 @@ document.addEventListener('DOMContentLoaded', function () {
           return;
         }
 
-        const studentEmail = localStorage.getItem('userEmail');
+        const studentEmail = isLoggedIn
+          ? (localStorage.getItem('userEmail') || localStorage.getItem('email') || '')
+          : '';
         
         const html = courses.map(c => {
           const isEnrolled = studentEmail && c.enrolledStudents && c.enrolledStudents.some(s => s.studentEmail === studentEmail);
@@ -495,8 +517,18 @@ function loginUser() {
 // ================= COURSE ENROLLMENT FUNCTION =================
 
 function enrollInCourse(courseId, courseName) {
-  const studentName = localStorage.getItem('username') || prompt('Enter your name:');
-  const studentEmail = localStorage.getItem('userEmail') || prompt('Enter your email:');
+  const token = localStorage.getItem('token');
+  const username = localStorage.getItem('username');
+  const userEmail = localStorage.getItem('userEmail') || localStorage.getItem('email');
+
+  if (!token || !username || !userEmail) {
+    const goToLogin = confirm('Please login or signup first to enroll in a course.\n\nPress OK for Login or Cancel for Signup.');
+    window.location.href = goToLogin ? '/pages/login.html' : '/pages/signup.html';
+    return;
+  }
+
+  const studentName = localStorage.getItem('username');
+  const studentEmail = localStorage.getItem('userEmail') || localStorage.getItem('email');
 
   if (!studentName || !studentEmail) {
     alert('Student name and email are required');

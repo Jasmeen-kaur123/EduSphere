@@ -60,8 +60,8 @@ border-radius:10px;
 
 <div class="nav" id="sidebarNav">
 <a href="/pages/dashboard.html">Dashboard</a>
-<a href="/pages/courses.html">My Courses</a>
-<a href="/pages/assignments.html">Assignments</a>
+<a href="/pages/courses.html" data-nav-courses>My Courses</a>
+<a href="/pages/assignments.html" data-nav-assignments>Assignments</a>
 <a href="/pages/profile.html">Profile</a>
 </div>
 
@@ -315,6 +315,10 @@ Login to access courses, assignments and track your progress.
 const user = localStorage.getItem("username")
 const sidebarNav = document.getElementById("sidebarNav")
 
+if (sidebarNav) {
+sidebarNav.style.display = ""
+}
+
 if(user){
 
 document.getElementById("welcomeText").innerText = "Welcome, " + user
@@ -327,16 +331,6 @@ document.getElementById("authButtons").style.display="none"
 
 document.getElementById("logoutBtn").style.display="inline-block"
 
-if (sidebarNav) {
-sidebarNav.style.display = ""
-}
-
-} else {
-
-if (sidebarNav) {
-sidebarNav.style.display = "none"
-}
-
 }
 
 
@@ -345,6 +339,9 @@ sidebarNav.style.display = "none"
 document.getElementById("logoutBtn").onclick=function(){
 
 localStorage.removeItem("username")
+localStorage.removeItem("token")
+localStorage.removeItem("userEmail")
+localStorage.removeItem("email")
 
 location.reload()
 

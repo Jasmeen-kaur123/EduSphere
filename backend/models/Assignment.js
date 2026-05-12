@@ -11,7 +11,7 @@ const assignmentSchema = new mongoose.Schema({
   fileUrl: String,
   score: Number,
   feedback: String,
-  gradedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  gradedBy: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
   gradedAt: Date
 }, { timestamps: true })
 

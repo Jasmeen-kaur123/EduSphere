@@ -11,11 +11,9 @@ const userSchema = new mongoose.Schema({
   }
   ,
   enrolledCourses: [
-    {
-      course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' },
-      completedLessons: [{ type: Number }]
+    {course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' },
+    completedLessons: [{ type: Number }]
     }
   ]
 });
-
 module.exports = mongoose.model("User", userSchema);

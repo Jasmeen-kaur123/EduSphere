@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import Sidebar from '../components/Sidebar'
 import api from '../api'
-import { useNavigate } from 'react-router-dom'
+import {useNavigate } from 'react-router-dom'
 
 export default function InstructorAssignments(){
   const [assignments, setAssignments] = useState([])
   const [loading, setLoading] = useState(true)
-  const [gradeData, setGradeData] = useState({}) // ✅ FIXED: per-card state
+  const [gradeData, setGradeData] = useState({}) 
   const [gradingId, setGradingId] = useState(null)
   const navigate = useNavigate()
 
@@ -14,7 +14,7 @@ export default function InstructorAssignments(){
     let mounted = true
     async function load(){
       try{
-        const a = await api.fetchAssignments()
+        const a= await api.fetchAssignments()
         if(mounted) setAssignments(Array.isArray(a) ? a : [])
       }catch(e){ console.error(e) } finally { if(mounted) setLoading(false) }
     }

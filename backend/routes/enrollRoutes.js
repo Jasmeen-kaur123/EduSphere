@@ -10,6 +10,7 @@ router.use((req, res, next) => {
 	next()
 })
 
+
 router.post('/enroll', protect, enroll)
 router.get('/me', protect, myCourses)
 router.get('/course/:id', protect, getCourse)
@@ -18,4 +19,4 @@ router.post('/complete', protect, completeLesson)
 module.exports = router
 
 
-module.exports = router
+

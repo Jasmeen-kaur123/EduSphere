@@ -2,11 +2,8 @@ const User = require('../models/User')
 const Course = require('../models/Course')
 
 exports.enroll = async (req, res) => {
-
   try{
-
     const userId = req.user.id
-
     const { courseId } = req.body
 
     if(!courseId){
@@ -14,7 +11,6 @@ exports.enroll = async (req, res) => {
         message: 'courseId required'
       })
     }
-
     const course = await Course.findById(courseId)
 
     if(!course){

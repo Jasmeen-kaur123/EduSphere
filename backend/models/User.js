@@ -15,5 +15,5 @@ const userSchema = new mongoose.Schema({
     completedLessons: [{ type: Number }]
     }
   ]
-});
+});``
 module.exports = mongoose.model("User", userSchema);

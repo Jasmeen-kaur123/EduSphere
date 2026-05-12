@@ -2,7 +2,7 @@ const Assignment = require('../models/Assignment')
 
 exports.createAssignment = async (req, res) => {
   const payload = {
-    title: req.body.title,
+    title : req.body.title,
     description: req.body.description,
     course: req.body.course,
     dueDate: req.body.dueDate,

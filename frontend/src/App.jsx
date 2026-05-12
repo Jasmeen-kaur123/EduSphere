@@ -15,6 +15,7 @@ import Schedule from './pages/Schedule'
 import CourseDetail from './pages/CourseDetail'
 import ProtectedRoute from './components/ProtectedRoute'
 
+
 export default function App(){
   return (
     <Routes>

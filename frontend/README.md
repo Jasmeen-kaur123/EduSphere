@@ -9,3 +9,6 @@ Quick start:
 Notes:
 - Tailwind is configured. If you already have Tailwind globally, you can skip installing dev deps, but installing locally is recommended.
 - The React app expects the backend at http://localhost:5000 for auth endpoints used by the Login page.
+
+
+Student Dashboard completed by Manjot

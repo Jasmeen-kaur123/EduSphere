@@ -5,7 +5,7 @@ import api from '../api'
 function CourseCard({ course, enrolled=false, onEnrolled }){
   const [loading, setLoading] = useState(false)
   const [isEnrolled, setIsEnrolled] = useState(Boolean(enrolled))
-  const handleEnroll = async ()=>{
+  const handleEnroll = async()=>{
     if(isEnrolled) return
     setLoading(true)
     try{
@@ -21,7 +21,6 @@ function CourseCard({ course, enrolled=false, onEnrolled }){
       alert(msg)
     } finally { setLoading(false) }
   }
-
   return (
     <div className="bg-white rounded-xl p-5 shadow">
       <div className="flex items-start justify-between">

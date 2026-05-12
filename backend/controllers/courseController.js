@@ -1,5 +1,5 @@
 // controllers/courseController.js
-const Course = require("../models/Course");
+const Course = require("../models/Course"); 
 
 // Instructor creates course
 exports.createCourse = async (req, res) => {
@@ -24,7 +24,6 @@ exports.createCourse = async (req, res) => {
       price,
       duration
     })
-
     return res.json(course)
   }catch(err){
     console.error('CreateCourse error', err)

@@ -8,18 +8,16 @@ export default function Login(){
   const [password, setPassword] = useState('')
   const [role, setRole] = useState('student')
   const navigate = useNavigate()
-
   const toggleForm = () => setIsLogin(v => !v)
 
   const handleAuth = async (e) => {
     e.preventDefault()
-
     try{
       if(isLogin){
         const res = await fetch('http://localhost:5000/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, role })
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ email, password, role })
         })
         const data = await res.json()
         if(res.ok){
@@ -37,7 +35,8 @@ export default function Login(){
         } else {
           alert(data.message || 'Login failed')
         }
-      } else {
+      } 
+      else {
         const res = await fetch('http://localhost:5000/api/auth/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

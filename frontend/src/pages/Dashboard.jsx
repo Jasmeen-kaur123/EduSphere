@@ -7,7 +7,7 @@ export default function Dashboard() {
 
   const navigate = useNavigate()
 
-  const [courses, setCourses] = useState([])
+  const [course, setCourses] = useState([])
   const [assignments, setAssignments] = useState([])
   const [profile, setProfile] = useState({
     name: 'Student'

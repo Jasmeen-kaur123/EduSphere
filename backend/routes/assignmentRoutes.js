@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express.Router()
-const { createAssignment, getAssignments, submitAssignment, gradeAssignment } = require('../controllers/assignmentController')
-const { protect, authorize } = require('../middleware/authMiddleware')
+const {createAssignment, getAssignments, submitAssignment, gradeAssignment} = require('../controllers/assignmentController')
+const {protect, authorize} = require('../middleware/authMiddleware')
 
 router.post('/', protect, createAssignment)
 router.get('/', protect, getAssignments)

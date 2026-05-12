@@ -43,7 +43,7 @@ export default function Grades() {
 
   const completedAssignments = useMemo(() => {
 
-    return assignments.filter(
+   return assignments.filter
       a =>
         a.score !== undefined &&
         a.score !== null

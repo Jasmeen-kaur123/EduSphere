@@ -27,7 +27,7 @@ async function request(path, opts = {}){
 
     if(!res.ok) throw { status: res.status, data }
 
-    return data
+   return data
 
   }catch(e){
 

@@ -8,12 +8,10 @@ exports.getStudents = async (req, res) => {
     // find courses taught by this instructor
     const courses = await Course.find({ instructor: instructorId }).select('_id')
     const courseIds = courses.map(c=> String(c._id))
-
     // find students who are enrolled in any of these courses and populate the enrolled course refs
     const students = await User.find({ role: 'student', 'enrolledCourses.course': { $in: courseIds } })
       .populate({ path: 'enrolledCourses.course', select: 'lessons title' })
       .lean()
-
     // build aggregated view
     const out = students.map(s => {
       const enrolled = (s.enrolledCourses || []).filter(ec => courseIds.includes(String(ec.course && ec.course._id ? ec.course._id : ec.course)))
@@ -32,7 +30,7 @@ exports.getStudents = async (req, res) => {
         name: s.name,
         email: s.email,
         enrolledCount,
-        assignmentsSubmitted: 0, // placeholder for now
+        assignmentsSubmitted: 0, 
         avgProgress
       }
     })
@@ -55,5 +53,4 @@ exports.getStudentById = async (req,res) => {
   }
 
 }
-
 module.exports = exports

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import Sidebar from '../components/Sidebar'
 import api from '../api'
-import { useNavigate } from 'react-router-dom'
+import {useNavigate} from 'react-router-dom'
 
 export default function Courses(){
   const [courses, setCourses] = useState([])
@@ -13,7 +13,6 @@ export default function Courses(){
     async function load(){
       try{
         const cs = await api.fetchMyCourses()
-        // api.fetchMyCourses returns array of { course, completedLessons } or plain course objects
         const normalized = (Array.isArray(cs) ? cs : []).map(item => item && item.course ? item.course : item)
         if(mounted) setCourses(normalized)
       }catch(e){ console.error(e) } finally { if(mounted) setLoading(false) }

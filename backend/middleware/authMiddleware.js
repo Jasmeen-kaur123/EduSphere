@@ -6,7 +6,8 @@ exports.protect = (req, res, next) => {
   if (!token) return res.status(401).json({ msg: "No token" });
 
   try {
-    const decoded = jwt.verify(token, "secretkey");
+    const secret = process.env.JWT_SECRET || 'secretkey'
+    const decoded = jwt.verify(token, secret);
     req.user = decoded;
     next();
   } catch (error) {

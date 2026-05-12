@@ -9,6 +9,13 @@ const userSchema = new mongoose.Schema({
     enum: ["student", "instructor"],
     required: true
   }
+  ,
+  enrolledCourses: [
+    {
+      course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' },
+      completedLessons: [{ type: Number }]
+    }
+  ]
 });
 
 module.exports = mongoose.model("User", userSchema);

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>EduSphere Auth</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100">
+
+<div class="flex min-h-screen">
+
+  <!-- LEFT SIDE -->
+  <div class="hidden lg:flex w-1/2 bg-gradient-to-br from-purple-600 to-indigo-700 text-white items-center justify-center flex-col p-10">
+    <h1 class="text-4xl font-bold mb-4">Welcome to EduSphere</h1>
+    <p class="text-lg text-center max-w-md">
+      Learn new skills, upgrade your career, and explore amazing courses.
+    </p>
+  </div>
+
+  <!-- RIGHT SIDE -->
+  <div class="w-full lg:w-1/2 flex items-center justify-center">
+    
+    <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+
+      <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center" id="formTitle">Login</h2>
+
+      <form id="authForm" onsubmit="handleAuth(event)" class="space-y-4">
+
+        <!-- Name (Signup only) -->
+        <div id="nameField" class="hidden">
+          <label class="block text-sm font-medium">Name</label>
+          <input id="name" type="text" class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500">
+        </div>
+
+        <!-- Email -->
+        <div>
+          <label class="block text-sm font-medium">Email</label>
+          <input id="email" type="email" required class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500">
+        </div>
+
+        <!-- Password -->
+        <div>
+          <label class="block text-sm font-medium">Password</label>
+          <input id="password" type="password" required class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500">
+        </div>
+
+        <!-- Role (visible for login and signup) -->
+        <div id="roleField">
+          <label class="block text-sm font-medium">Role</label>
+          <select id="role" class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500">
+            <option value="student">Student</option>
+            <option value="instructor">Instructor</option>
+          </select>
+        </div>
+
+        <!-- Button -->
+        <button type="submit" class="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition">
+          Submit
+        </button>
+
+      </form>
+
+      <!-- Toggle -->
+      <p class="text-sm text-center mt-4">
+        <span id="toggleText">Don't have an account?</span>
+        <button onclick="toggleForm()" class="text-purple-600 font-medium ml-1">Signup</button>
+      </p>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  let isLogin = true;
+
+  function toggleForm() {
+    isLogin = !isLogin;
+
+    document.getElementById("formTitle").innerText = isLogin ? "Login" : "Signup";
+    // Show/hide name field only. Role selection stays visible for both login and signup.
+    if (isLogin) {
+      document.getElementById("nameField").classList.add("hidden");
+    } else {
+      document.getElementById("nameField").classList.remove("hidden");
+    }
+
+    document.getElementById("toggleText").innerText = isLogin 
+      ? "Don't have an account?" 
+      : "Already have an account?";
+  }
+
+  async function handleAuth(event) {
+  event.preventDefault(); // 🛑 page reload stop
+
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  try {
+    if (isLogin) {
+      const role = document.getElementById("role").value;
+      const res = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ email, password, role })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert("Login successful ✅");
+        localStorage.setItem("token", data.token);
+
+        window.location.href = "/pages/dashboard.html";
+      } else {
+        alert(data.message);
+      }
+
+    } else {
+      const name = document.getElementById("name").value;
+      const role = document.getElementById("role").value;
+
+      const res = await fetch("http://localhost:5000/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ name, email, password, role })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert("Signup successful 🎉");
+      } else {
+        alert(data.message);
+      }
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert("Server error ⚠️");
+  }
+}
+</script>
+
+</body>
+</html>

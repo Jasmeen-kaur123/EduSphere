@@ -12,7 +12,7 @@ export default function InstructorDashboard(){
 
   useEffect(() => {
 
-    let mounted = true
+    let mounted =true
 
     async function load(){
 
@@ -24,11 +24,11 @@ export default function InstructorDashboard(){
 
         // ALL STUDENTS
 
-        const students = await api.fetchInstructorStudents()
+        const students =await api.fetchInstructorStudents()
 
         // PROFILE
 
-        const tokenProfile = localStorage.getItem('profile')
+        const tokenProfile =localStorage.getItem('profile')
 
         let profId = null
 
@@ -41,7 +41,7 @@ export default function InstructorDashboard(){
 
         // FILTER COURSES
 
-        let myCourses = Array.isArray(cs)
+        let myCourses =Array.isArray(cs)
           ? cs
           : []
 

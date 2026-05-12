@@ -20,7 +20,7 @@ export default function Assignments(){
       }catch(e){ console.error(e) } finally { if(mounted) setLoading(false) }
     }
     load()
-    return ()=> mounted = false
+    return ()=> mounted=false
   },[])
 
   function openSubmitModal(assignment){

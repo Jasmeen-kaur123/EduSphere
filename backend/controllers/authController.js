@@ -68,7 +68,6 @@ exports.getMe = async (req, res) => {
 
 exports.getProfile = async (req,res) => {
   try{
-    // req.user is set by protect middleware (contains id and role)
     const User = require('../models/User')
     const u = await User.findById(req.user.id).select('-password')
     if(!u) return res.status(404).json({ message: 'User not found' })

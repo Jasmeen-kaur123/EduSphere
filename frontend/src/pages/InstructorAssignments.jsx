@@ -11,7 +11,7 @@ export default function InstructorAssignments(){
   const navigate = useNavigate()
 
   useEffect(()=>{
-    let mounted = true
+    let mounted= true
     async function load(){
       try{
         const a= await api.fetchAssignments()
@@ -19,7 +19,7 @@ export default function InstructorAssignments(){
       }catch(e){ console.error(e) } finally { if(mounted) setLoading(false) }
     }
     load()
-    return ()=> mounted = false
+    return ()=> mounted= false
   },[])
 
   function setField(id, field, value){
@@ -28,9 +28,9 @@ export default function InstructorAssignments(){
 
   async function handleGrade(id){
     setGradingId(id)
-    const { score = 0, feedback = '' } = gradeData[id] || {}
+    const { score= 0, feedback = '' } =gradeData[id] || {}
     try{
-      await api.gradeAssignment(id, { score: Number(score), feedback })
+      await api.gradeAssignment(id, { score:Number(score),feedback})
       alert('Graded successfully!')
       const a = await api.fetchAssignments()
       setAssignments(Array.isArray(a) ? a : [])

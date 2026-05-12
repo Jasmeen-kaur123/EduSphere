@@ -15,7 +15,7 @@ export default function InstructorStudents(){
       }catch(e){ console.error(e) } finally { if(mounted) setLoading(false) }
     }
     load()
-    return ()=> mounted = false
+    return()=>mounted =false
   },[])
 
   return (

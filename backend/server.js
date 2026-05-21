@@ -36,7 +36,9 @@ async function start() {
   app.use("/api/assignments", require("./routes/assignmentRoutes"));
   app.use("/api/enroll", require("./routes/enrollRoutes"));
       // Instructor-specific endpoints
-      app.use("/api/instructor", require("./routes/instructorRoutes"));
+      const instructorRoutes =
+  require('./routes/instructorRoutes')
+      app.use("/api/instructor", instructorRoutes);
 
     // Simple API root for quick checks from a browser
     app.get('/', (req, res) => {

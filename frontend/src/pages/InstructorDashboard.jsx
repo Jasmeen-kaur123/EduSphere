@@ -1,98 +1,110 @@
+
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api'
 import Sidebar from '../components/Sidebar'
 
-export default function InstructorDashboard() {
+export default function InstructorDashboard(){
 
   const [courses, setCourses] = useState([])
-  const [students, setStudents] = useState([])
-  const [recentActivity, setRecentActivity] = useState([])
+  const [totalStudents, setTotalStudents] = useState(0)
+  const [assignments, setAssignments] = useState([])
   const [loading, setLoading] = useState(true)
-
-  const profile = (() => {
-    try {
-      return JSON.parse(
-        localStorage.getItem('profile')
-      )
-    } catch {
-      return null
-    }
-  })()
+  const [recentStudentName, setRecentStudentName] =
+  useState('')
 
   useEffect(() => {
 
     let mounted = true
 
-    async function load() {
+    async function load(){
 
-      try {
+      try{
 
-        const cs =
-          await api.fetchCourses()
+        // ALL COURSES
 
-        const studentData =
-          await api.fetchInstructorStudents()
+        const cs = await api.fetchCourses()
 
-        const profId =
-          profile?._id
+        // ALL STUDENTS
 
-        let myCourses =
-          Array.isArray(cs)
-            ? cs
-            : []
+        const students = await api.fetchInstructorStudents()
 
-        if (profId) {
+        if (
+  Array.isArray(students) &&
+  students.length > 0
+) {
+
+  setRecentStudentName(
+    students[0].name
+  )
+
+}
+
+        const totalAssignments =
+  assignments.length
+
+const pendingGrades =
+  assignments.filter(
+    a => a.pendingSubmissions > 0
+  ).reduce(
+    (sum, a) =>
+      sum + a.pendingSubmissions,
+    0
+  )
+
+        // PROFILE
+
+        const tokenProfile = localStorage.getItem('profile')
+
+        let profId = null
+
+        if(tokenProfile){
+
+          try{
+            profId = JSON.parse(tokenProfile)._id
+          }catch(e){}
+        }
+
+        // FILTER COURSES
+
+        let myCourses = Array.isArray(cs)
+          ? cs
+          : []
+
+        if(profId){
 
           myCourses = myCourses.filter(c =>
 
             c.instructor &&
             (
-              c.instructor === profId ||
-              c.instructor?._id === profId
+              c.instructor._id === profId ||
+              c.instructor === profId
             )
           )
         }
 
-     const activity =
-  (Array.isArray(studentData)
-    ? studentData
-    : []
-  )
-  .map(student => ({
-  name: student.name || 'Student'
-}))
-  .sort(
-    (a, b) =>
-      new Date(b.date) -
-      new Date(a.date)
-  )
-  .slice(0, 5)
-
-        if (mounted) {
+        if(mounted){
 
           setCourses(myCourses)
 
-          setStudents(
-            Array.isArray(studentData)
-              ? studentData
-              : []
-          )
+          // TOTAL STUDENTS FROM ENROLLMENTS
 
-          setRecentActivity(activity)
+          setTotalStudents(
+            Array.isArray(students)
+              ? students.length
+              : 0
+          )
         }
 
-      } catch (err) {
+      }catch(err){
 
-        console.error(
-          'Instructor dashboard error',
-          err
-        )
+        console.error(err)
 
-      } finally {
+      }finally{
 
-        if (mounted)
+        if(mounted){
           setLoading(false)
+        }
       }
     }
 
@@ -104,20 +116,21 @@ export default function InstructorDashboard() {
 
   }, [])
 
-  const activeCourses =
-    courses.length
+  // ACTIVE COURSES
 
-  const totalStudents =
-    students.length
+  const activeCourses = courses.length
 
-  
+  const totalAssignments =
+  assignments.length
 
-  const initials =
-    profile?.name
-      ?.split(' ')
-      ?.map(x => x[0])
-      ?.join('')
-      ?.toUpperCase() || 'I'
+const pendingGrades =
+  assignments.filter(
+    a => a.pendingSubmissions > 0
+  ).reduce(
+    (sum, a) =>
+      sum + a.pendingSubmissions,
+    0
+  )
 
   return (
 
@@ -133,15 +146,13 @@ export default function InstructorDashboard() {
 
           <div className="flex items-center justify-between mb-8">
 
-            <h1 className="text-4xl font-bold">
-
-              Welcome,
-              {' '}
-              {profile?.name || 'Instructor'}
-
+            <h1 className="text-3xl font-bold">
+              Welcome, Dr.
             </h1>
 
             <div className="flex items-center gap-4">
+
+              {/* SEARCH */}
 
               <div className="relative">
 
@@ -167,13 +178,25 @@ export default function InstructorDashboard() {
 
               </div>
 
+              {/* NOTIFICATION */}
+
               <div className="h-11 w-11 rounded-full bg-yellow-100 flex items-center justify-center text-xl">
                 🔔
               </div>
 
-              <div className="h-11 w-11 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">
-                {initials}
-              </div>
+              {/* PROFILE */}
+
+            <div className="h-11 w-11 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold uppercase">
+  {
+    localStorage.getItem('profile')
+      ? JSON.parse(localStorage.getItem('profile'))
+          .name
+          ?.split(' ')
+          .map(n => n[0])
+          .join('')
+      : 'I'
+  }
+</div>
 
             </div>
 
@@ -182,6 +205,8 @@ export default function InstructorDashboard() {
           {/* STATS */}
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
+
+            {/* TOTAL STUDENTS */}
 
             <div className="bg-white rounded-2xl p-5 shadow-sm">
 
@@ -193,11 +218,9 @@ export default function InstructorDashboard() {
                 {totalStudents}
               </div>
 
-              <div className="text-green-500 text-sm mt-2">
-                +{totalStudents} enrolled
-              </div>
-
             </div>
+
+            {/* ACTIVE COURSES */}
 
             <div className="bg-white rounded-2xl p-5 shadow-sm">
 
@@ -209,15 +232,35 @@ export default function InstructorDashboard() {
                 {activeCourses}
               </div>
 
-              <div className="text-green-500 text-sm mt-2">
-                {activeCourses} published
-              </div>
-
             </div>
+
+           <div className="bg-white rounded-2xl p-5 shadow-sm">
+
+  <div className="text-gray-500">
+    Total Assignments
+  </div>
+
+  <div className="text-3xl font-bold mt-3">
+    {totalAssignments}
+  </div>
+
+</div>
+
+            <div className="bg-white rounded-2xl p-5 shadow-sm">
+
+  <div className="text-gray-500">
+    Pending Grades
+  </div>
+
+  <div className="text-3xl font-bold mt-3">
+    {pendingGrades}
+  </div>
+
+</div>
 
           </div>
 
-          {/* MAIN */}
+          {/* MAIN GRID */}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
@@ -235,41 +278,40 @@ export default function InstructorDashboard() {
 
               </div>
 
-              {loading && (
-                <div>Loading...</div>
-              )}
-
-              {!loading &&
-                courses.length === 0 && (
-
-                <div className="text-gray-500">
-                  No courses found
-                </div>
-
-              )}
-
               <div className="space-y-4">
 
-                {courses.map(course => (
+                {loading && (
+
+                  <div className="text-gray-500">
+                    Loading...
+                  </div>
+
+                )}
+
+                {!loading && courses.length === 0 && (
+
+                  <div className="text-gray-500">
+                    No courses yet
+                  </div>
+
+                )}
+
+                {courses.map(c => (
 
                   <div
-                    key={course._id}
+                    key={c._id}
                     className="border rounded-2xl p-5 flex items-center justify-between"
                   >
 
                     <div>
 
-                      <div className="font-semibold text-lg">
-                        {course.title}
-                      </div>
-
-                      <div className="text-gray-500 text-sm mt-1">
-                        ⭐ {course.rating || 4.8}
+                      <div className="text-xl font-semibold">
+                        {c.title}
                       </div>
 
                     </div>
 
-                    <span className="bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm">
+                    <span className="bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-medium">
                       Published
                     </span>
 
@@ -282,56 +324,45 @@ export default function InstructorDashboard() {
             </section>
 
             {/* RECENT ACTIVITY */}
-{/* RECENT ACTIVITY */}
 
-<section className="bg-white rounded-2xl p-6 shadow-sm">
+            <section className="bg-white rounded-2xl p-6 shadow-sm">
 
   <h2 className="text-2xl font-bold mb-6">
     Recent Activity
   </h2>
 
-  {recentActivity.length === 0 ? (
+  {totalStudents > 0 ? (
+
+    <div className="flex items-center gap-4">
+
+      <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
+        📚
+      </div>
+
+      <div>
+
+        <div className="text-xl font-medium">
+          New enrollment: {recentStudentName}
+        </div>
+
+        <div className="text-gray-400">
+          Just now
+        </div>
+
+      </div>
+
+    </div>
+
+  ) : (
 
     <div className="text-gray-500">
       No recent activity
     </div>
 
-  ) : (
-
-    <div className="divide-y">
-
-      {recentActivity.map((item, index) => (
-
-        <div
-          key={index}
-          className="flex items-center gap-4 py-5"
-        >
-
-          <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-xl">
-            📚
-          </div>
-
-          <div>
-
-            <p className="font-medium text-lg">
-              New enrollment: {item.name}
-            </p>
-
-            <p className="text-gray-400 text-sm">
-              Just now
-            </p>
-
-          </div>
-
-        </div>
-
-      ))}
-
-    </div>
-
   )}
 
 </section>
+
           </div>
 
         </main>
@@ -342,21 +373,19 @@ export default function InstructorDashboard() {
   )
 }
 
-function CreateNewButton() {
+function CreateNewButton(){
 
-  const navigate =
-    useNavigate()
+  const navigate = useNavigate()
 
   return (
 
     <button
-      onClick={() =>
-        navigate('/create-course')
-      }
-      className="bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700"
+      onClick={() => navigate('/create-course')}
+      className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-blue-700 transition"
     >
       + Create New
     </button>
 
   )
 }
+

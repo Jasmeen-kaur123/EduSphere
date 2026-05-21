@@ -360,6 +360,22 @@ export default function InstructorAssignments() {
                   )}
 
 
+{submission?.fileUrl && (
+  <div className="mt-4">
+    <div className="text-sm font-semibold text-gray-700 mb-2">
+      Attachment
+    </div>
+
+    <a
+      href={submission.fileUrl}
+      target="_blank"
+      rel="noreferrer"
+      className="text-blue-600 underline"
+    >
+      📎 View File
+    </a>
+  </div>
+)}
 
                   {/* GRADE FORM */}
 

@@ -92,13 +92,24 @@ export default function Assignments() {
 
   try {
 
-    await api.submitAssignment(
+    const formData = new FormData()
 
-      selectedAssignment._id,
+formData.append(
+  "answer",
+  answer
+)
 
-      { answer }
+if (file) {
+  formData.append(
+    "file",
+    file
+  )
+}
 
-    )
+await api.submitAssignment(
+  selectedAssignment._id,
+  formData
+)
 
     // UPDATE UI IMMEDIATELY
 

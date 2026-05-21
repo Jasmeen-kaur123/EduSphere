@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import Sidebar from '../components/Sidebar'
 import api from '../api'
+import { useNavigate } from "react-router-dom";
 
 export default function InstructorCourses() {
+
+  const navigate = useNavigate();
 
   const [courses, setCourses] = useState([])
 
@@ -54,13 +57,13 @@ export default function InstructorCourses() {
 
 
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="flex flex-wrap gap-6">
 
             {courses.map((course) => (
 
               <div
                 key={course._id}
-                className="bg-white rounded-3xl overflow-hidden shadow-sm border"
+                className="w-[380px] bg-white rounded-3xl overflow-hidden shadow-sm border"
               >
 
                 {/* TOP */}
@@ -101,21 +104,16 @@ export default function InstructorCourses() {
 
 
 
-                  <div className="flex gap-3 mt-6">
+                  <div className="mt-6">
 
-                    <button className="flex-1 border rounded-xl py-3 font-semibold hover:bg-gray-50">
+  <button
+  onClick={() => navigate(`/instructor/course/edit/${course._id}`)}
+  className="w-full border rounded-xl py-3 font-semibold hover:bg-gray-50"
+>
+  Edit Course
+</button>
 
-                      Edit
-
-                    </button>
-
-                    <button className="flex-1 bg-blue-600 text-white rounded-xl py-3 font-semibold hover:bg-blue-700">
-
-                      Analytics
-
-                    </button>
-
-                  </div>
+</div>
 
                 </div>
 

@@ -39,27 +39,27 @@ exports.getCourses = async (req, res) => {
   res.json(courses);
 };
 
-exports.getInstructorCourses = async (req, res) => {
+// exports.getInstructorCourses = async (req, res) => {
 
-  try {
+//   try {
 
-    const courses = await Course.find({
+//     const courses = await Course.find({
 
-      instructor: req.user.id
+//       instructor: req.user.id
 
-    })
+//     })
 
-    res.json(courses)
+//     res.json(courses)
 
-  } catch (err) {
+//   } catch (err) {
 
-    console.error(err)
+//     console.error(err)
 
-    res.status(500).json({
-      message: 'Server error'
-    })
-  }
-}
+//     res.status(500).json({
+//       message: 'Server error'
+//     })
+//   }
+// }
 
 // Instructor can update course (e.g., add lessons)
 exports.updateCourse = async (req, res) => {
@@ -113,3 +113,24 @@ exports.getInstructorCourses = async (req, res) => {
     })
   }
 }
+
+exports.getCourseById = async (req, res) => {
+  try {
+    const course = await Course.findById(req.params.id);
+
+    if (!course) {
+      return res.status(404).json({
+        message: "Course not found"
+      });
+    }
+
+    return res.json(course);
+
+  } catch (err) {
+    console.error(err);
+
+    return res.status(500).json({
+      message: "Server error"
+    });
+  }
+};

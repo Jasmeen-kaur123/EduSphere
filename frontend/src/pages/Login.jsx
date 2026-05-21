@@ -71,7 +71,7 @@ export default function Login(){
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 1.657-1.343 3-3 3S6 12.657 6 11s1.343-3 3-3 3 1.343 3 3zM21 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2" />
               </svg>
             </div>
-            <h1 className="text-2xl font-extrabold text-gray-800">EduCore LMS</h1>
+            <h1 className="text-2xl font-extrabold text-gray-800">EduSphere</h1>
           </div>
           <h2 className="text-xl font-semibold text-gray-700 mt-4">{isLogin ? 'Welcome back' : 'Create an account'}</h2>
           <p className="text-gray-500 mt-2">{isLogin ? 'Sign in to continue your learning journey' : 'Create a new account to get started'}</p>

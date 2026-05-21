@@ -17,6 +17,7 @@ import Schedule from './pages/Schedule'
 import CourseDetail from './pages/CourseDetail'
 import ProtectedRoute from './components/ProtectedRoute'
 
+
 export default function App(){
   return (
     <Routes>
@@ -42,6 +43,14 @@ export default function App(){
       <Route path="/instructor/assignments" element={<ProtectedRoute allowedRoles={["instructor"]}><InstructorAssignments/></ProtectedRoute>} />
       <Route path="/create-assignment" element={<ProtectedRoute allowedRoles={["instructor"]}><CreateAssignment/></ProtectedRoute>} />
       <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route
+  path="/instructor/course/edit/:id"
+  element={
+    <ProtectedRoute allowedRoles={["instructor"]}>
+      <CreateCourse />
+    </ProtectedRoute>
+  }
+/>
     </Routes>
   )
 }

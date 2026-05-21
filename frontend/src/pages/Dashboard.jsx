@@ -126,15 +126,71 @@ export default function Dashboard() {
 
   // PENDING ASSIGNMENTS
 
-  const pendingAssignments =
+ const pendingAssignments =
+  assignments.filter(a => {
+    const status = a.submission?.status
 
-    assignments.filter(a => {
+    return !status || status === 'pending'
+  }).length
 
-      const status =
-        a.submission?.status || 'pending'
+  const gradedAssignments =
+  assignments.filter(
+    a =>
+      a.status === 'graded' &&
+      a.score !== undefined &&
+      a.score !== null
+  )
 
-      return status !== 'graded'
-    }).length
+const avgScore =
+  gradedAssignments.length > 0
+    ? Math.round(
+        gradedAssignments.reduce(
+          (sum, a) =>
+            sum + Number(a.score),
+          0
+        ) /
+          gradedAssignments.length
+      )
+    : 0
+
+
+    const totalMinutes =
+  courses.reduce((sum, course) => {
+
+    const c =
+      course.course || course
+
+    const lessons =
+      Array.isArray(c.lessons)
+        ? c.lessons
+        : []
+
+    let minutes = 0
+
+    lessons.forEach(lesson => {
+
+      const duration =
+        String(
+          lesson.duration || ''
+        ).toLowerCase()
+
+      const hr =
+        duration.match(/(\d+)\s*hr?/)
+
+      const min =
+        duration.match(/(\d+)\s*min/)
+
+      minutes +=
+        (hr ? parseInt(hr[1]) : 0) * 60 +
+        (min ? parseInt(min[1]) : 0)
+    })
+
+    return sum + minutes
+
+  }, 0)
+
+const learnedHours =
+  (totalMinutes / 60).toFixed(1)
 
 
 
@@ -248,16 +304,6 @@ export default function Dashboard() {
 
 
 
-              {/* BELL */}
-
-              <div className="h-12 w-12 rounded-full bg-yellow-100 flex items-center justify-center text-xl">
-
-                🔔
-
-              </div>
-
-
-
               {/* PROFILE */}
 
               <div className="h-12 w-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
@@ -322,7 +368,7 @@ export default function Dashboard() {
 
               <div className="text-4xl font-bold mt-3">
 
-                85%
+                {avgScore}%
 
               </div>
 
@@ -340,7 +386,7 @@ export default function Dashboard() {
 
               <div className="text-4xl font-bold mt-3">
 
-                {courses.length * 5}
+                {learnedHours}h
 
               </div>
 

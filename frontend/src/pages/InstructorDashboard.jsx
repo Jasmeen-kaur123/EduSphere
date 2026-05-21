@@ -178,11 +178,7 @@ const pendingGrades =
 
               </div>
 
-              {/* NOTIFICATION */}
-
-              <div className="h-11 w-11 rounded-full bg-yellow-100 flex items-center justify-center text-xl">
-                🔔
-              </div>
+             
 
               {/* PROFILE */}
 

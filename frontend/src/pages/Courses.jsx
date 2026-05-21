@@ -162,12 +162,14 @@ export default function Courses() {
                       </h3>
 
 
+
                       <div className="flex items-center gap-5 mt-4 text-gray-500 text-sm">
 
                         <span>
                           📚 {totalLessons} lessons
                         </span>
 
+                        
                         <span>
                           ⏰ {course.duration || 20} hrs
                         </span>

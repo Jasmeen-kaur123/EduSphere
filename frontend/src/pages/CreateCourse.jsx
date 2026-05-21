@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import api from '../api'
 import Sidebar from '../components/Sidebar'
+
 
 export default function CreateCourse(){
   const navigate = useNavigate()
@@ -15,6 +16,36 @@ export default function CreateCourse(){
   const [thumbnail, setThumbnail] = useState(null)
   const [videoFiles, setVideoFiles] = useState([])
   const [submitting, setSubmitting] = useState(false)
+  const { id } = useParams();
+  const isEdit = Boolean(id)
+
+useEffect(() => {
+  if (isEdit) {
+    loadCourse()
+  }
+}, [id])
+
+async function loadCourse() {
+  try {
+    const course = await api.fetchInstructorCourseById(id)
+
+    setTitle(course.title || '')
+    setDescription(course.description || '')
+    setDuration(course.duration || '')
+    setLessons(
+      course.lessons?.map(ls => ({
+        name: ls.title || ls.name || '',
+        duration: ls.duration || '',
+        videoUrl: ls.videoUrl || ''
+      })) || []
+    )
+
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+
 
   function addLesson(){
     setLessons(l=>[...l, { name: '', duration: '', videoUrl: '' }])
@@ -26,36 +57,85 @@ export default function CreateCourse(){
     setLessons(l=>l.filter((_,i)=>i!==idx))
   }
 
-  async function handlePublish(e){
-    e.preventDefault()
-    setSubmitting(true)
-    try{
-      // Post basic course data. Backend expects title, description, instructor assigned server-side.
-      const token = localStorage.getItem('token')
-  // send lessons (with optional videoUrl) so backend will store them
-  const body = { title, description, category, level, price: Number(price)||0, duration, lessons }
-      const res = await fetch('http://localhost:5000/api/courses', {
+//   const body = {
+//   title,
+//   description,
+//   category,
+//   level,
+//   price: Number(price) || 0,
+//   duration,
+//   lessons
+// }
+
+  async function handlePublish(e) {
+  e.preventDefault()
+  setSubmitting(true)
+
+  try {
+
+    const body = {
+      title,
+      description,
+      category,
+      level,
+      price: Number(price) || 0,
+      duration,
+      lessons
+    }
+
+    if (isEdit) {
+
+      await api.updateCourse(id, body)
+
+      alert('Course Updated Successfully ✔️')
+
+      navigate('/instructor/courses')
+
+      return
+    }
+
+    const token = localStorage.getItem('token')
+
+    const res = await fetch(
+      'http://localhost:5000/api/courses',
+      {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': token
         },
         body: JSON.stringify(body)
-      })
-      const data = await res.json()
-      if(res.ok){
-        alert('Course created ✔️')
-        // TODO: upload media if needed
-        navigate('/instructor')
-      } else {
-        alert(data.message || 'Failed to create course')
       }
-    }catch(err){
-      console.error(err)
-      alert('Server error')
-    } finally { setSubmitting(false) }
-  }
+    )
 
+    const data = await res.json()
+
+    if (res.ok) {
+
+      alert('Course created ✔️')
+
+      navigate('/instructor/courses')
+
+    } else {
+
+      alert(
+        data.message ||
+        'Failed to create course'
+      )
+    }
+
+  } catch (err) {
+
+    console.error(err)
+
+    alert('Server error')
+
+  } finally {
+
+    setSubmitting(false)
+
+  }
+}
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex">
@@ -63,7 +143,9 @@ export default function CreateCourse(){
         <main className="flex-1 p-6">
           <div className="max-w-7xl mx-auto">
             <div className="mb-6">
-              <h1 className="text-3xl font-extrabold">Create New Course</h1>
+              <h1 className="text-3xl font-extrabold">
+  {isEdit ? 'Edit Course' : 'Create New Course'}
+</h1>
               <p className="text-gray-500 mt-2">Build and publish your course</p>
             </div>
 
@@ -104,10 +186,6 @@ export default function CreateCourse(){
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium">Price (₹)</label>
-                    <input value={price} onChange={e=>setPrice(e.target.value)} className="mt-1 w-full px-4 py-3 border rounded-lg" />
-                  </div>
-                  <div>
                     <label className="block text-sm font-medium">Duration</label>
                     <input value={duration} onChange={e=>setDuration(e.target.value)} placeholder="e.g. 30 hours" className="mt-1 w-full px-4 py-3 border rounded-lg" />
                   </div>
@@ -115,24 +193,69 @@ export default function CreateCourse(){
               </div>
             </div>
 
-            <div>
-              <h2 className="font-semibold text-lg">Course Curriculum</h2>
-              <div className="mt-4 space-y-3">
-                {lessons.map((ls, idx)=> (
-                  <div key={idx} className="flex gap-3 items-center">
-                    <div className="w-8 text-center text-gray-500">{idx+1}</div>
-                    <input value={ls.name} onChange={e=>updateLesson(idx,'name',e.target.value)} placeholder="Lesson title" className="flex-1 px-3 py-2 border rounded-lg" />
-                    <input value={ls.duration} onChange={e=>updateLesson(idx,'duration',e.target.value)} placeholder="10:00" className="w-28 px-3 py-2 border rounded-lg" />
-                    <input value={ls.videoUrl || ''} onChange={e=>updateLesson(idx,'videoUrl',e.target.value)} placeholder="https://...mp4 (optional)" className="w-48 px-3 py-2 border rounded-lg" />
-                    {lessons.length>1 && <button type="button" onClick={()=>removeLesson(idx)} className="text-red-600">Remove</button>}
-                  </div>
-                ))}
+ <div>
+  <h2 className="font-semibold text-lg mb-4">
+    📚 Course Curriculum
+  </h2>
 
-                <div>
-                  <button type="button" onClick={addLesson} className="px-4 py-2 rounded-lg bg-blue-600 text-white">+ Add Lesson</button>
-                </div>
-              </div>
-            </div>
+  <div className="bg-gray-50 p-4 rounded-2xl space-y-3">
+
+    {lessons.map((ls, idx) => (
+
+      <div
+        key={idx}
+        className="grid grid-cols-[40px_2fr_100px_2.5fr_90px] gap-4 items-center bg-white p-4 rounded-xl border shadow-sm"
+      >
+
+        <div className="text-center font-semibold text-blue-600">
+          {idx + 1}
+        </div>
+
+        <input
+  value={ls.name}
+  onChange={(e)=>updateLesson(idx,'name',e.target.value)}
+  placeholder="Lesson title"
+  className="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+/>
+
+        <input
+  value={ls.duration}
+  onChange={(e)=>updateLesson(idx,'duration',e.target.value)}
+  placeholder="00:00"
+  className="w-full px-4 py-3 border rounded-xl text-center"
+ />
+
+        <input
+  value={ls.videoUrl || ''}
+  onChange={(e)=>updateLesson(idx,'videoUrl',e.target.value)}
+  placeholder="https://youtube.com/..."
+  className="w-full px-4 py-3 border rounded-xl truncate"
+ />
+
+        {lessons.length > 1 && (
+          <button
+            type="button"
+            onClick={() => removeLesson(idx)}
+            className="px-3 py-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 font-medium"
+          >
+            Remove
+          </button>
+        )}
+
+      </div>
+
+    ))}
+
+    <button
+      type="button"
+      onClick={addLesson}
+     className="px-5 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700"
+    >
+      + Add Lesson
+    </button>
+
+  </div>
+</div>
 
             <div>
               <h2 className="font-semibold text-lg">Media & Uploads</h2>
@@ -151,12 +274,15 @@ export default function CreateCourse(){
             </div>
 
             <div>
-              <button type="submit" disabled={submitting} className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold">{submitting ? 'Publishing...' : '🚀 Publish Course'}</button>
+              <button type="submit" disabled={submitting} className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold">{submitting
+  ? (isEdit ? 'Updating...' : 'Publishing...')
+  : (isEdit ? '💾 Update Course' : '🚀 Publish Course')
+}</button>
             </div>
           </form>
 
           <aside className="space-y-6">
-            <div className="bg-white p-6 rounded-xl shadow">
+           <div className="bg-white p-6 rounded-2xl shadow border">
               <h3 className="font-semibold">Course Curriculum</h3>
               <div className="mt-4 space-y-2">
                 {lessons.map((ls,idx)=> (
@@ -165,7 +291,6 @@ export default function CreateCourse(){
                       <div className="h-8 w-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">{idx+1}</div>
                       <div>
                         <div className="font-medium">{ls.name || 'Untitled'}</div>
-                        <div className="text-xs text-gray-400">{ls.videoUrl ? ls.videoUrl : 'No video URL'}</div>
                       </div>
                     </div>
                     <div className="text-sm text-gray-500">{ls.duration}</div>

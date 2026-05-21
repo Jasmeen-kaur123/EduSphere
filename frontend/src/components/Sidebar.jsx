@@ -23,7 +23,7 @@ export default function Sidebar(){
             </svg>
           </div>
           <div>
-            <div className="text-lg font-bold">EduCore</div>
+            <div className="text-lg font-bold">EduSphere</div>
             <div className="text-xs text-gray-500">{role}</div>
           </div>
         </div>
@@ -49,9 +49,7 @@ export default function Sidebar(){
               <li>
                 <NavLink to="/instructor/assignments" className="px-3 py-2 rounded-lg hover:bg-gray-100 block">Assignments</NavLink>
               </li>
-              <li>
-                <NavLink to="/instructor/analytics" className="px-3 py-2 rounded-lg hover:bg-gray-100 block">Analytics</NavLink>
-              </li>
+              
             </>
           ) : (
             <>
@@ -70,9 +68,6 @@ export default function Sidebar(){
               </li>
               <li>
                 <NavLink to="/grades" className="px-3 py-2 rounded-lg hover:bg-gray-100 block">Grades & Progress</NavLink>
-              </li>
-              <li>
-                <NavLink to="/schedule" className="px-3 py-2 rounded-lg hover:bg-gray-100 block">Schedule</NavLink>
               </li>
             </>
           )}

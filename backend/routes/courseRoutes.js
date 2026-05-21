@@ -18,6 +18,12 @@ router.get(
   authorize('instructor'),
   getInstructorCourses
 )
+router.get(
+  "/:id",
+  protect,
+  authorize("instructor"),
+  getCourseById
+)
 
 // Instructor updates course (lessons etc.)
 router.patch("/:id", protect, authorize("instructor"), updateCourse);

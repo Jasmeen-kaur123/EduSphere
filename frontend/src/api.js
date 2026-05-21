@@ -17,6 +17,8 @@ async function request(path, opts = {}){
 
 }
 
+
+
   const res = await fetch(`${API_BASE}${path}`, {
     ...opts,
     headers
@@ -84,12 +86,45 @@ export async function gradeAssignment(id, body){
   return request(`/api/assignments/${id}/grade`, { method: 'POST', body: JSON.stringify(body) })
 }
 
+export async function fetchInstructorCourses() {
+  return request('/api/courses/instructor', {
+    method: 'GET'
+  })
+}
+
+export async function fetchInstructorCourseById(id) {
+
+  return request(
+    `/api/courses/${id}`,
+    {
+      method: "GET"
+    }
+  );
+
+}
+
+export async function updateCourse(id, data) {
+  return request(`/api/courses/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
 // ✅ FIXED: submitAssignment & gradeAssignment added to default export
 export default {
-  fetchCourses, fetchAssignments, fetchInstructorAssignments,
-  fetchProfile, getProfile, enrollCourse, fetchMyCourses,
-  fetchCourseById, completeLesson, fetchInstructorStudents,
+  fetchCourses,
+  fetchInstructorCourses, // ✅ add this
+  fetchInstructorCourseById,
+  fetchAssignments,
+  fetchInstructorAssignments,
+  fetchProfile,
+  getProfile,
+  enrollCourse,
+  fetchMyCourses,
+  fetchCourseById,
+  completeLesson,
+  fetchInstructorStudents,
   createAssignment,
-  submitAssignment,  // ✅ was missing
-  gradeAssignment    // ✅ was missing
+  submitAssignment,
+  gradeAssignment
 }

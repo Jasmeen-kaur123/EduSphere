@@ -30,10 +30,8 @@ export default function CreateCourse(){
     e.preventDefault()
     setSubmitting(true)
     try{
-      // Post basic course data. Backend expects title, description, instructor assigned server-side.
       const token = localStorage.getItem('token')
-  // send lessons (with optional videoUrl) so backend will store them
-  const body = { title, description, category, level, price: Number(price)||0, duration, lessons }
+      const body = { title, description, category, level, price: Number(price)||0, duration, lessons }
       const res = await fetch('http://localhost:5000/api/courses', {
         method: 'POST',
         headers: {
@@ -183,7 +181,6 @@ export default function CreateCourse(){
                 <div className="text-gray-400">Drop image here or click to upload</div>
               </div>
             </div>
-
               </aside>
             </div>
           </div>

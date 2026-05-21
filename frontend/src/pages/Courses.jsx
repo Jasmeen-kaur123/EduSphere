@@ -21,7 +21,7 @@ export default function Courses(){
     return ()=> mounted = false
   },[])
 
-  return (
+return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex">
         <Sidebar />

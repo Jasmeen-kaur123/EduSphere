@@ -7,7 +7,7 @@ export default function Dashboard() {
 
   const navigate = useNavigate()
 
-  const [course, setCourses] = useState([])
+  const [courses, setCourses] = useState([])
   const [assignments, setAssignments] = useState([])
   const [profile, setProfile] = useState({
     name: 'Student'
@@ -75,19 +75,14 @@ export default function Dashboard() {
 
   }, [])
 
-  const initials = profile?.name
-    ? profile.name
-        .split(' ')
-        .map(n => n[0])
-        .join('')
-        .toUpperCase()
-    : 'U'
+  const initials =
+  profile?.name?.[0]?.toUpperCase() || 'U'
 
   const enrolledCount = courses.length
 
-  const pendingAssignments = assignments.filter(
-    a => a.status !== 'graded'
-  ).length
+ const pendingAssignments = assignments.filter(
+  a => (a.submission?.status || 'pending') !== 'graded'
+).length
 
   function resumeCourse(course) {
 

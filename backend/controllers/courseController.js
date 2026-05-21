@@ -34,9 +34,27 @@ exports.createCourse = async (req, res) => {
 
 // Student view courses
 exports.getCourses = async (req, res) => {
-  const courses = await Course.find().populate("instructor", "name");
-  res.json(courses);
-};
+  try {
+
+    const courses =
+      await Course.find()
+      .populate("instructor", "name")
+
+    return res.json(courses)
+
+  } catch (err) {
+
+    console.error(
+      "GET COURSES ERROR:",
+      err
+    )
+
+    return res.status(500).json({
+      message: "Server error",
+      error: err.message
+    })
+  }
+}
 
 // Instructor can update course (e.g., add lessons)
 exports.updateCourse = async (req, res) => {

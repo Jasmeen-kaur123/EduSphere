@@ -69,64 +69,71 @@ exports.enroll = async (req, res) => {
 }
 
 exports.myCourses = async (req, res) => {
-
-  try{
+  try {
 
     const user = await User.findById(req.user.id)
       .populate({
-        path: 'enrolledCourses.course',
+        path: "enrolledCourses.course",
         populate: {
-          path: 'instructor',
-          select: 'name'
+          path: "instructor",
+          select: "name"
         }
       })
 
-    if(!user){
-
+    if (!user) {
       return res.status(404).json({
-        message: 'User not found'
+        message: "User not found"
       })
     }
 
-    const out = (user.enrolledCourses || []).map(ec => {
+    const result = (user.enrolledCourses || [])
+      .filter(ec => ec.course) // null course remove
+      .map(ec => {
 
-      const courseObj = ec.course
+        const course = ec.course
 
-      const totalLessons =
-        courseObj.lessons?.length || 1
-
-      const completedLessons =
-        ec.completedLessons || []
-
-      const progress = Math.round(
-        (completedLessons.length / totalLessons) * 100
-      )
-
-      return {
-
-        ...courseObj.toObject(),
-
-        completedLessons,
-
-        progress,
-
-        lastLesson:
-          completedLessons.length > 0
-            ? completedLessons[
-                completedLessons.length - 1
-              ]
+        const totalLessons =
+          Array.isArray(course.lessons)
+            ? course.lessons.length
             : 0
-      }
-    })
 
-    return res.json(out)
+        const completedLessons =
+          Array.isArray(ec.completedLessons)
+            ? ec.completedLessons
+            : []
 
-  }catch(err){
+        const progress =
+          totalLessons > 0
+            ? Math.round(
+                (completedLessons.length / totalLessons) * 100
+              )
+            : 0
 
-    console.error('MyCourses error', err)
+        return {
+          ...course.toObject(),
+          completedLessons,
+          progress,
+          lastLesson:
+            completedLessons.length > 0
+              ? completedLessons[
+                  completedLessons.length - 1
+                ]
+              : 0
+        }
+      })
+
+    return res.json(result)
+
+  } catch (err) {
+
+    console.error(
+      "MY COURSES ERROR:",
+      err
+    )
 
     return res.status(500).json({
-      message: 'Server error'
+      message: "Server error",
+      error: err.message
     })
   }
 }

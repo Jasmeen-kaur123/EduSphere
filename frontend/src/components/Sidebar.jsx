@@ -6,8 +6,7 @@ export default function Sidebar(){
   let name = 'Instructor'
   let role = 'instructor'
   if(stored) try{ const p = JSON.parse(stored); name = p.name || name; role = p.role || role }catch(e){}
-
-  // fallback to role stored separately
+  
   if(!role){
     const r = localStorage.getItem('role')
     if(r) role = r

@@ -7,7 +7,7 @@ import CreateCourse from './pages/CreateCourse'
 import InstructorStudents from './pages/InstructorStudents'
 import Assignments from './pages/Assignments'
 import InstructorAssignments from './pages/InstructorAssignments'
-import CreateAssignment from './pages/CreateAssignment'  // ✅ FIXED: was missing
+import CreateAssignment from './pages/CreateAssignment'
 import Courses from './pages/Courses'
 import Browse from './pages/Browse'
 import Grades from './pages/Grades'

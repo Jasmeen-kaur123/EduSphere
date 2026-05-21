@@ -40,17 +40,13 @@ export default function Dashboard() {
 
         // FETCH PROFILE
         try {
-
           const p = await api.getProfile()
-
           if (p && mounted) {
             setProfile(p)
           }
-
         } catch (err) {
           console.log(err)
         }
-
       } catch (err) {
 
         console.error(err)
@@ -365,11 +361,8 @@ export default function Dashboard() {
             {/* ASSIGNMENTS */}
 
             <aside className="bg-white rounded-2xl shadow p-6">
-
               <div className="flex items-center justify-between mb-6">
-
                 <div>
-
                   <h2 className="text-2xl font-bold">
                     Upcoming Assignments
                   </h2>
@@ -383,11 +376,9 @@ export default function Dashboard() {
                 <button className="border px-4 py-2 rounded-xl">
                   View All
                 </button>
-
               </div>
 
               <div className="space-y-4">
-
                 {assignments.length === 0 && (
 
                   <div className="text-gray-500">

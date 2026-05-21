@@ -82,7 +82,6 @@ export async function gradeAssignment(id, body){
   return request(`/api/assignments/${id}/grade`, { method: 'POST', body: JSON.stringify(body) })
 }
 
-// ✅ FIXED: submitAssignment & gradeAssignment added to default export
 export default {
   fetchCourses, fetchAssignments, fetchInstructorAssignments,
   fetchProfile, getProfile, enrollCourse, fetchMyCourses,

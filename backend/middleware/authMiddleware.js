@@ -1,26 +1,125 @@
-const jwt = require("jsonwebtoken");
+const jwt = require('jsonwebtoken')
 
-exports.protect = (req, res, next) => {
-  const token = req.headers.authorization;
+const User = require('../models/User')
 
-  if (!token) return res.status(401).json({ msg: "No token" });
+
+
+// PROTECT ROUTE
+
+exports.protect = async (req, res, next) => {
 
   try {
-    const secret = process.env.JWT_SECRET || 'secretkey'
-    const decoded = jwt.verify(token, secret);
-    req.user = decoded;
-    next();
-  } catch (error) {
-    res.status(401).json({ msg: "Invalid token" });
-  }
-};
 
-// Role check
-exports.authorize = (...roles) => {
-  return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ msg: "Access denied" });
+    let token
+
+
+
+    // GET TOKEN
+
+    if (
+
+      req.headers.authorization &&
+
+      req.headers.authorization.startsWith('Bearer')
+
+    ) {
+
+      token =
+        req.headers.authorization.split(' ')[1]
     }
-    next();
-  };
-};
+
+
+
+    // NO TOKEN
+
+    if (!token) {
+
+      return res.status(401).json({
+
+        message: 'Not authorized'
+
+      })
+    }
+
+
+
+    // VERIFY TOKEN
+
+    const decoded = jwt.verify(
+
+      token,
+
+      process.env.JWT_SECRET
+
+    )
+
+
+
+    // FIND USER
+
+    const user =
+      await User.findById(decoded.id)
+
+        .select('-password')
+
+
+
+    if (!user) {
+
+      return res.status(404).json({
+
+        message: 'User not found'
+
+      })
+    }
+
+
+
+    // SAVE USER
+
+    req.user = user
+
+
+
+    next()
+
+  } catch (err) {
+
+    console.error(err)
+
+    return res.status(401).json({
+
+      message: 'Token failed'
+
+    })
+  }
+}
+
+
+
+
+
+// AUTHORIZE ROLE
+
+exports.authorize = (...roles) => {
+
+  return (req, res, next) => {
+
+    if (
+
+      !roles.includes(req.user.role)
+
+    ) {
+
+      return res.status(403).json({
+
+        message: 'Not authorized'
+
+      })
+    }
+
+
+
+    next()
+  }
+}

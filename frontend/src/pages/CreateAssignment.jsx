@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 
 export default function CreateAssignment(){
   const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
   const [course, setCourse] = useState('')
   const [dueDate, setDueDate] = useState('')
   const [courses, setCourses] = useState([])
@@ -27,7 +28,7 @@ export default function CreateAssignment(){
     e.preventDefault()
     setSubmitting(true)
     try{
-      await api.createAssignment({ title, course, dueDate })
+      await api.createAssignment({ title, description, course, dueDate })
       navigate('/instructor/assignments')
     }catch(e){ console.error(e); alert('Failed') } finally { setSubmitting(false) }
   }
@@ -44,6 +45,26 @@ export default function CreateAssignment(){
                 <label className="block text-sm font-medium">Title</label>
                 <input value={title} onChange={e=>setTitle(e.target.value)} required className="mt-1 w-full px-4 py-3 border rounded-lg" />
               </div>
+
+              {/* DESCRIPTION */}
+
+<div className="mt-5">
+
+  <label className="block text-sm font-semibold mb-2">
+
+    Description
+
+  </label>
+
+  <textarea
+    value={description}
+    onChange={(e) => setDescription(e.target.value)}
+    rows={5}
+    placeholder="Enter assignment description..."
+    className="w-full border border-gray-300 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-blue-400"
+  />
+
+</div>
 
               <div>
                 <label className="block text-sm font-medium">Course</label>

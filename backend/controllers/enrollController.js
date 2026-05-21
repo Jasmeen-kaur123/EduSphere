@@ -1,31 +1,40 @@
 const User = require('../models/User')
 const Course = require('../models/Course')
 
+
+
+// ENROLL COURSE
+
 exports.enroll = async (req, res) => {
 
-  try{
+  try {
 
-    const userId = req.user.id
+    const userId = req.user._id
 
     const { courseId } = req.body
 
-    if(!courseId){
+    if (!courseId) {
+
       return res.status(400).json({
         message: 'courseId required'
       })
     }
 
-    const course = await Course.findById(courseId)
+    const course =
+      await Course.findById(courseId)
 
-    if(!course){
+    if (!course) {
+
       return res.status(404).json({
         message: 'Course not found'
       })
     }
 
-    const user = await User.findById(userId)
+    const user =
+      await User.findById(userId)
 
-    if(!user){
+    if (!user) {
+
       return res.status(404).json({
         message: 'User not found'
       })
@@ -34,31 +43,52 @@ exports.enroll = async (req, res) => {
     user.enrolledCourses =
       user.enrolledCourses || []
 
+
+
+    // CHECK EXISTING
+
     const exists =
       user.enrolledCourses.find(
-        ec => String(ec.course) === String(courseId)
+
+        ec =>
+          String(ec.course) ===
+          String(courseId)
+
       )
 
-    if(exists){
+
+
+    if (exists) {
 
       return res.json({
         message: 'Already enrolled'
       })
     }
 
-    user.enrolledCourses.push({
-      course: courseId,
-      completedLessons: []
-    })
+
+
+    // ADD COURSE
+user.enrolledCourses.push({
+  course: courseId,
+  completedLessons: [],
+  enrolledAt: new Date()
+})
+
+
 
     await user.save()
 
+
+
     return res.json({
+
       message: 'Enrolled successfully',
+
       course
+
     })
 
-  }catch(err){
+  } catch (err) {
 
     console.error('Enroll error', err)
 
@@ -68,60 +98,111 @@ exports.enroll = async (req, res) => {
   }
 }
 
+
+
+
+
+// MY COURSES
+
 exports.myCourses = async (req, res) => {
 
-  try{
+  try {
 
-    const user = await User.findById(req.user.id)
-      .populate({
-        path: 'enrolledCourses.course',
-        populate: {
-          path: 'instructor',
-          select: 'name'
-        }
-      })
+    const user =
+      await User.findById(req.user._id)
 
-    if(!user){
+        .populate({
+
+          path: 'enrolledCourses.course',
+
+          populate: {
+
+            path: 'instructor',
+
+            select: 'name'
+
+          }
+
+        })
+
+
+
+    if (!user) {
 
       return res.status(404).json({
         message: 'User not found'
       })
     }
 
-    const out = (user.enrolledCourses || []).map(ec => {
 
-      const courseObj = ec.course
 
-      const totalLessons =
-        courseObj.lessons?.length || 1
+    const out = (user.enrolledCourses || [])
 
-      const completedLessons =
-        ec.completedLessons || []
+      // REMOVE NULL COURSES
 
-      const progress = Math.round(
-        (completedLessons.length / totalLessons) * 100
-      )
+      .filter(ec => ec.course)
 
-      return {
+      .map(ec => {
 
-        ...courseObj.toObject(),
+        const courseObj = ec.course
 
-        completedLessons,
 
-        progress,
 
-        lastLesson:
-          completedLessons.length > 0
-            ? completedLessons[
-                completedLessons.length - 1
-              ]
+        const totalLessons =
+
+          Array.isArray(courseObj.lessons)
+            ? courseObj.lessons.length
             : 0
-      }
-    })
+
+
+
+        const completedLessons =
+          ec.completedLessons || []
+
+
+
+        const progress =
+
+          totalLessons > 0
+
+            ? Math.round(
+
+                (completedLessons.length /
+                  totalLessons) * 100
+
+              )
+
+            : 0
+
+
+
+        return {
+
+          ...courseObj.toObject(),
+
+          completedLessons,
+
+          progress,
+
+          totalLessons,
+
+          lastLesson:
+
+            completedLessons.length > 0
+
+              ? completedLessons[
+                  completedLessons.length - 1
+                ]
+
+              : 0
+        }
+      })
+
+
 
     return res.json(out)
 
-  }catch(err){
+  } catch (err) {
 
     console.error('MyCourses error', err)
 
@@ -131,46 +212,81 @@ exports.myCourses = async (req, res) => {
   }
 }
 
+
+
+
+
+// GET SINGLE COURSE
+
 exports.getCourse = async (req, res) => {
 
-  try{
+  try {
 
-    const course = await Course.findById(req.params.id)
-      .populate('instructor', 'name')
+    const course =
+      await Course.findById(req.params.id)
 
-    if(!course){
+        .populate('instructor', 'name')
+
+
+
+    if (!course) {
 
       return res.status(404).json({
         message: 'Course not found'
       })
     }
 
+
+
     let completedLessons = []
 
-    try{
 
-      const user = await User.findById(req.user.id)
+
+    try {
+
+      const user =
+        await User.findById(req.user._id)
+
+
 
       const ec =
         (user.enrolledCourses || []).find(
-          x => String(x.course) === String(req.params.id)
+
+          x =>
+            String(x.course) ===
+            String(req.params.id)
+
         )
 
-      if(ec && Array.isArray(ec.completedLessons)){
 
-        completedLessons = ec.completedLessons
+
+      if (
+
+        ec &&
+        Array.isArray(ec.completedLessons)
+
+      ) {
+
+        completedLessons =
+          ec.completedLessons
       }
 
-    }catch(e){
+    } catch (e) {
+
       console.log(e)
     }
 
+
+
     return res.json({
+
       course,
+
       completedLessons
+
     })
 
-  }catch(err){
+  } catch (err) {
 
     console.error('GetCourse error', err)
 
@@ -180,63 +296,102 @@ exports.getCourse = async (req, res) => {
   }
 }
 
+
+
+
+
+// COMPLETE LESSON
+
 exports.completeLesson = async (req, res) => {
 
-  try{
+  try {
 
-    const userId = req.user.id
+    const userId = req.user._id
 
     const {
       courseId,
       lessonIndex
     } = req.body
 
-    if(typeof lessonIndex !== 'number'){
+
+
+    if (typeof lessonIndex !== 'number') {
 
       return res.status(400).json({
         message: 'lessonIndex required'
       })
     }
 
-    const user = await User.findById(userId)
 
-    if(!user){
+
+    const user =
+      await User.findById(userId)
+
+
+
+    if (!user) {
 
       return res.status(404).json({
         message: 'User not found'
       })
     }
 
+
+
     const ec =
       user.enrolledCourses.find(
-        x => String(x.course) === String(courseId)
+
+        x =>
+          String(x.course) ===
+          String(courseId)
+
       )
 
-    if(!ec){
+
+
+    if (!ec) {
 
       return res.status(400).json({
         message: 'Not enrolled'
       })
     }
 
+
+
     ec.completedLessons =
       ec.completedLessons || []
 
-    if(
-      !ec.completedLessons.includes(lessonIndex)
-    ){
 
-      ec.completedLessons.push(lessonIndex)
+
+    if (
+
+      !ec.completedLessons.includes(
+        lessonIndex
+      )
+
+    ) {
+
+      ec.completedLessons.push(
+        lessonIndex
+      )
     }
+
+
 
     await user.save()
 
+
+
     return res.json({
+
       message: 'Lesson completed',
-      completedLessons: ec.completedLessons
+
+      completedLessons:
+        ec.completedLessons
+
     })
 
-  }catch(err){
+  } catch (err) {
 
     console.error('CompleteLesson error', err)
 
@@ -245,4 +400,3 @@ exports.completeLesson = async (req, res) => {
     })
   }
 }
-

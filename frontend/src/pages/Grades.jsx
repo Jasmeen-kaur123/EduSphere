@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Sidebar from '../components/Sidebar'
 import api from '../api'
 
 export default function Grades() {
 
   const [assignments, setAssignments] = useState([])
+
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -15,14 +16,19 @@ export default function Grades() {
 
       try {
 
-        const res = await api.fetchAssignments()
+        const data = await api.fetchAssignments()
 
         if (mounted) {
-          setAssignments(Array.isArray(res) ? res : [])
+
+          setAssignments(
+            Array.isArray(data) ? data : []
+          )
         }
 
       } catch (err) {
+
         console.error(err)
+
       } finally {
 
         if (mounted) {
@@ -39,54 +45,33 @@ export default function Grades() {
 
   }, [])
 
-  // COMPLETED ASSIGNMENTS
 
-  const completedAssignments = useMemo(() => {
+  // GRADED ONLY
 
-    return assignments.filter(
-      a =>
-        a.score !== undefined &&
-        a.score !== null
-    )
+  const gradedAssignments = assignments.filter(
+    a => a.submission?.status === 'graded'
+  )
 
-  }, [assignments])
-
-  // TOTAL DONE
-
-  const assignmentsDone =
-    completedAssignments.length
 
   // AVG SCORE
 
   const avgScore =
-    completedAssignments.length > 0
+    gradedAssignments.length > 0
       ? Math.round(
-          completedAssignments.reduce(
-            (sum, a) => sum + Number(a.score || 0),
+
+          gradedAssignments.reduce(
+
+            (acc, a) =>
+
+              acc + (a.submission?.score || 0),
+
             0
-          ) / completedAssignments.length
+
+          ) / gradedAssignments.length
+
         )
       : 0
 
-  // STATUS COLOR
-
-  function getStatusStyle(status) {
-
-    switch(status){
-
-      case 'submitted':
-        return 'bg-green-100 text-green-700'
-
-      case 'graded':
-        return 'bg-blue-100 text-blue-700'
-
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-700'
-
-      default:
-        return 'bg-red-100 text-red-700'
-    }
-  }
 
   return (
 
@@ -96,171 +81,239 @@ export default function Grades() {
 
         <Sidebar />
 
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-6">
 
           {/* HEADER */}
 
           <div className="mb-8">
 
-            <h1 className="text-4xl font-bold">
+            <h1 className="text-4xl font-extrabold">
+
               Grades & Progress
+
             </h1>
 
             <p className="text-gray-500 mt-2">
+
               Your academic performance overview
+
             </p>
 
           </div>
+
 
           {/* STATS */}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
 
-            {/* ASSIGNMENTS DONE */}
-
-            <div className="bg-white rounded-2xl shadow-sm border p-6">
+            <div className="bg-white rounded-2xl shadow p-6">
 
               <div className="text-gray-500 text-lg">
+
                 Assignments Done
+
               </div>
 
-              <div className="text-5xl font-bold text-blue-600 mt-4">
-                {assignmentsDone}
+              <div className="text-5xl font-bold text-blue-600 mt-3">
+
+                {gradedAssignments.length}
+
               </div>
 
             </div>
 
-            {/* AVG SCORE */}
 
-            <div className="bg-white rounded-2xl shadow-sm border p-6">
+            <div className="bg-white rounded-2xl shadow p-6">
 
               <div className="text-gray-500 text-lg">
+
                 Avg Score
+
               </div>
 
-              <div className="text-5xl font-bold text-orange-500 mt-4">
+              <div className="text-5xl font-bold text-orange-500 mt-3">
+
                 {avgScore}%
+
               </div>
 
             </div>
 
           </div>
 
+
           {/* TABLE */}
 
-          <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
+          <div className="bg-white rounded-2xl shadow overflow-hidden">
 
-            {/* TITLE */}
-
-            <div className="px-8 py-6 border-b">
+            <div className="p-6 border-b">
 
               <h2 className="text-2xl font-bold">
+
                 Course Performance
+
               </h2>
 
             </div>
 
-            {/* HEADER */}
-
-            <div className="grid grid-cols-4 px-8 py-4 border-b bg-gray-50 text-gray-400 font-semibold tracking-wide text-sm">
-
-              <div>
-                COURSE
-              </div>
-
-              <div>
-                STATUS
-              </div>
-
-              <div>
-                ASSIGNMENTS
-              </div>
-
-              <div>
-                SCORE
-              </div>
-
-            </div>
 
             {/* LOADING */}
 
             {loading && (
 
               <div className="p-6 text-gray-500">
+
                 Loading...
+
               </div>
 
             )}
+
 
             {/* EMPTY */}
 
             {!loading && assignments.length === 0 && (
 
               <div className="p-6 text-gray-500">
+
                 No assignments found
+
               </div>
 
             )}
 
-            {/* TABLE BODY */}
 
-            {!loading && assignments.map((a, index) => (
+            {!loading && assignments.length > 0 && (
 
-              <div
-                key={a._id || index}
-                className="grid grid-cols-4 px-8 py-6 border-b items-center hover:bg-gray-50 transition"
-              >
+              <div className="overflow-x-auto">
 
-                {/* COURSE */}
+                <table className="w-full">
 
-                <div>
+                  <thead className="bg-gray-50">
 
-                  <div className="text-lg font-semibold text-black">
-                    {a.title}
-                  </div>
+                    <tr>
 
-                  <div className="text-gray-400 mt-1">
-                    {a.course?.title || 'Course'}
-                  </div>
+                      <th className="text-left px-6 py-4 text-gray-400 text-sm font-semibold uppercase">
 
-                </div>
+                        Course
 
-                {/* STATUS */}
+                      </th>
 
-                <div>
+                      <th className="text-left px-6 py-4 text-gray-400 text-sm font-semibold uppercase">
 
-                  <span
-                    className={`px-4 py-2 rounded-full text-sm font-semibold ${getStatusStyle(a.status)}`}
-                  >
-                    {a.status || 'pending'}
-                  </span>
+                        Status
 
-                </div>
+                      </th>
 
-                {/* DUE DATE */}
+                      <th className="text-left px-6 py-4 text-gray-400 text-sm font-semibold uppercase">
 
-                <div className="text-gray-600 font-medium">
+                        Due Date
 
-                  {a.dueDate
-                    ? `Due ${new Date(a.dueDate).toLocaleDateString()}`
-                    : '--'}
+                      </th>
 
-                </div>
+                      <th className="text-left px-6 py-4 text-gray-400 text-sm font-semibold uppercase">
 
-                {/* SCORE */}
+                        Score
 
-                <div className="text-2xl font-bold text-black">
+                      </th>
 
-                  {a.score !== undefined &&
-                   a.score !== null
-                    ? `${a.score}/100`
-                    : '--'}
+                    </tr>
 
-                </div>
+                  </thead>
+
+
+                  <tbody>
+
+                    {assignments.map((a, index) => {
+
+                      const status =
+                        a.submission?.status || 'pending'
+
+                      return (
+
+                        <tr
+                          key={a._id || index}
+                          className="border-t hover:bg-gray-50 transition"
+                        >
+
+                          {/* TITLE */}
+
+                          <td className="px-6 py-5">
+
+                            <div className="font-semibold text-lg line-clamp-2">
+
+                              {a.title}
+
+                            </div>
+
+                            <div className="text-gray-500 text-sm mt-1">
+
+                              {a.course?.title || 'Course'}
+
+                            </div>
+
+                          </td>
+
+
+                          {/* STATUS */}
+
+                          <td className="px-6 py-5">
+
+                            <span
+                              className={`px-4 py-1 rounded-full text-xs font-semibold capitalize ${
+                                status === 'pending'
+                                  ? 'bg-yellow-100 text-yellow-700'
+                                  : status === 'graded'
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-blue-100 text-blue-700'
+                              }`}
+                            >
+
+                              {status}
+
+                            </span>
+
+                          </td>
+
+
+                          {/* DUE DATE */}
+
+                          <td className="px-6 py-5 text-gray-600 text-sm">
+
+                            {a.dueDate
+                              ? new Date(a.dueDate)
+                                  .toLocaleDateString()
+                              : '—'
+                            }
+
+                          </td>
+
+
+                          {/* SCORE */}
+
+                          <td className="px-6 py-5 font-semibold text-lg">
+
+                            {status === 'graded'
+
+                              ? `${a.submission?.score || 0}/100`
+
+                              : '--'
+                            }
+
+                          </td>
+
+                        </tr>
+
+                      )
+                    })}
+
+                  </tbody>
+
+                </table>
 
               </div>
 
-            ))}
+            )}
 
           </div>
 
@@ -271,4 +324,3 @@ export default function Grades() {
     </div>
   )
 }
-

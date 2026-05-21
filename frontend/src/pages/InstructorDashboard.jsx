@@ -1,84 +1,98 @@
-
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api'
 import Sidebar from '../components/Sidebar'
 
-export default function InstructorDashboard(){
+export default function InstructorDashboard() {
 
   const [courses, setCourses] = useState([])
-  const [totalStudents, setTotalStudents] = useState(0)
+  const [students, setStudents] = useState([])
+  const [recentActivity, setRecentActivity] = useState([])
   const [loading, setLoading] = useState(true)
+
+  const profile = (() => {
+    try {
+      return JSON.parse(
+        localStorage.getItem('profile')
+      )
+    } catch {
+      return null
+    }
+  })()
 
   useEffect(() => {
 
     let mounted = true
 
-    async function load(){
+    async function load() {
 
-      try{
+      try {
 
-        // ALL COURSES
+        const cs =
+          await api.fetchCourses()
 
-        const cs = await api.fetchCourses()
+        const studentData =
+          await api.fetchInstructorStudents()
 
-        // ALL STUDENTS
+        const profId =
+          profile?._id
 
-        const students = await api.fetchInstructorStudents()
+        let myCourses =
+          Array.isArray(cs)
+            ? cs
+            : []
 
-        // PROFILE
-
-        const tokenProfile = localStorage.getItem('profile')
-
-        let profId = null
-
-        if(tokenProfile){
-
-          try{
-            profId = JSON.parse(tokenProfile)._id
-          }catch(e){}
-        }
-
-        // FILTER COURSES
-
-        let myCourses = Array.isArray(cs)
-          ? cs
-          : []
-
-        if(profId){
+        if (profId) {
 
           myCourses = myCourses.filter(c =>
 
             c.instructor &&
             (
-              c.instructor._id === profId ||
-              c.instructor === profId
+              c.instructor === profId ||
+              c.instructor?._id === profId
             )
           )
         }
 
-        if(mounted){
+     const activity =
+  (Array.isArray(studentData)
+    ? studentData
+    : []
+  )
+  .map(student => ({
+  name: student.name || 'Student'
+}))
+  .sort(
+    (a, b) =>
+      new Date(b.date) -
+      new Date(a.date)
+  )
+  .slice(0, 5)
+
+        if (mounted) {
 
           setCourses(myCourses)
 
-          // TOTAL STUDENTS FROM ENROLLMENTS
-
-          setTotalStudents(
-            Array.isArray(students)
-              ? students.length
-              : 0
+          setStudents(
+            Array.isArray(studentData)
+              ? studentData
+              : []
           )
+
+          setRecentActivity(activity)
         }
 
-      }catch(err){
+      } catch (err) {
 
-        console.error(err)
+        console.error(
+          'Instructor dashboard error',
+          err
+        )
 
-      }finally{
+      } finally {
 
-        if(mounted){
+        if (mounted)
           setLoading(false)
-        }
       }
     }
 
@@ -90,30 +104,20 @@ export default function InstructorDashboard(){
 
   }, [])
 
-  // ACTIVE COURSES
+  const activeCourses =
+    courses.length
 
-  const activeCourses = courses.length
+  const totalStudents =
+    students.length
 
-  // REVENUE
+  
 
-  const revenue = courses.reduce((sum, c) => {
-
-    return sum + Number(c.revenue || 0)
-
-  }, 0)
-
-  // AVG RATING
-
-  const avgRating =
-    courses.length > 0
-      ? (
-          courses.reduce(
-            (sum, c) =>
-              sum + Number(c.rating || 0),
-            0
-          ) / courses.length
-        ).toFixed(1)
-      : '0.0'
+  const initials =
+    profile?.name
+      ?.split(' ')
+      ?.map(x => x[0])
+      ?.join('')
+      ?.toUpperCase() || 'I'
 
   return (
 
@@ -129,13 +133,15 @@ export default function InstructorDashboard(){
 
           <div className="flex items-center justify-between mb-8">
 
-            <h1 className="text-3xl font-bold">
-              Welcome, Dr.
+            <h1 className="text-4xl font-bold">
+
+              Welcome,
+              {' '}
+              {profile?.name || 'Instructor'}
+
             </h1>
 
             <div className="flex items-center gap-4">
-
-              {/* SEARCH */}
 
               <div className="relative">
 
@@ -161,25 +167,13 @@ export default function InstructorDashboard(){
 
               </div>
 
-              {/* NOTIFICATION */}
-
               <div className="h-11 w-11 rounded-full bg-yellow-100 flex items-center justify-center text-xl">
                 🔔
               </div>
 
-              {/* PROFILE */}
-
-            <div className="h-11 w-11 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold uppercase">
-  {
-    localStorage.getItem('profile')
-      ? JSON.parse(localStorage.getItem('profile'))
-          .name
-          ?.split(' ')
-          .map(n => n[0])
-          .join('')
-      : 'I'
-  }
-</div>
+              <div className="h-11 w-11 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">
+                {initials}
+              </div>
 
             </div>
 
@@ -188,8 +182,6 @@ export default function InstructorDashboard(){
           {/* STATS */}
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
-
-            {/* TOTAL STUDENTS */}
 
             <div className="bg-white rounded-2xl p-5 shadow-sm">
 
@@ -207,8 +199,6 @@ export default function InstructorDashboard(){
 
             </div>
 
-            {/* ACTIVE COURSES */}
-
             <div className="bg-white rounded-2xl p-5 shadow-sm">
 
               <div className="text-gray-500">
@@ -225,45 +215,9 @@ export default function InstructorDashboard(){
 
             </div>
 
-            {/* REVENUE */}
-
-            <div className="bg-white rounded-2xl p-5 shadow-sm">
-
-              <div className="text-gray-500">
-                Revenue
-              </div>
-
-              <div className="text-3xl font-bold mt-3">
-                ₹{(revenue / 1000).toFixed(1)}k
-              </div>
-
-              <div className="text-green-500 text-sm mt-2">
-                +₹18K this month
-              </div>
-
-            </div>
-
-            {/* RATING */}
-
-            <div className="bg-white rounded-2xl p-5 shadow-sm">
-
-              <div className="text-gray-500">
-                Avg. Rating
-              </div>
-
-              <div className="text-3xl font-bold mt-3">
-                {avgRating}
-              </div>
-
-              <div className="text-green-500 text-sm mt-2">
-                Excellent
-              </div>
-
-            </div>
-
           </div>
 
-          {/* MAIN GRID */}
+          {/* MAIN */}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
@@ -281,44 +235,41 @@ export default function InstructorDashboard(){
 
               </div>
 
+              {loading && (
+                <div>Loading...</div>
+              )}
+
+              {!loading &&
+                courses.length === 0 && (
+
+                <div className="text-gray-500">
+                  No courses found
+                </div>
+
+              )}
+
               <div className="space-y-4">
 
-                {loading && (
-
-                  <div className="text-gray-500">
-                    Loading...
-                  </div>
-
-                )}
-
-                {!loading && courses.length === 0 && (
-
-                  <div className="text-gray-500">
-                    No courses yet
-                  </div>
-
-                )}
-
-                {courses.map(c => (
+                {courses.map(course => (
 
                   <div
-                    key={c._id}
+                    key={course._id}
                     className="border rounded-2xl p-5 flex items-center justify-between"
                   >
 
                     <div>
 
-                      <div className="text-xl font-semibold">
-                        {c.title}
+                      <div className="font-semibold text-lg">
+                        {course.title}
                       </div>
 
-                      <div className="text-gray-500 mt-1 text-sm">
-                        ⭐ {c.rating || 4.8}
+                      <div className="text-gray-500 text-sm mt-1">
+                        ⭐ {course.rating || 4.8}
                       </div>
 
                     </div>
 
-                    <span className="bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-medium">
+                    <span className="bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm">
                       Published
                     </span>
 
@@ -331,27 +282,56 @@ export default function InstructorDashboard(){
             </section>
 
             {/* RECENT ACTIVITY */}
+{/* RECENT ACTIVITY */}
 
-            <section className="bg-white rounded-2xl p-6 shadow-sm">
+<section className="bg-white rounded-2xl p-6 shadow-sm">
 
-              <h2 className="text-2xl font-bold mb-6">
-                Recent Activity
-              </h2>
+  <h2 className="text-2xl font-bold mb-6">
+    Recent Activity
+  </h2>
 
-              <div className="border rounded-2xl p-5">
+  {recentActivity.length === 0 ? (
 
-                <div className="text-lg font-medium">
-                  New enrollment: Manjot
-                </div>
+    <div className="text-gray-500">
+      No recent activity
+    </div>
 
-                <div className="text-gray-400 mt-1 text-sm">
-                  just now
-                </div>
+  ) : (
 
-              </div>
+    <div className="divide-y">
 
-            </section>
+      {recentActivity.map((item, index) => (
 
+        <div
+          key={index}
+          className="flex items-center gap-4 py-5"
+        >
+
+          <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-xl">
+            📚
+          </div>
+
+          <div>
+
+            <p className="font-medium text-lg">
+              New enrollment: {item.name}
+            </p>
+
+            <p className="text-gray-400 text-sm">
+              Just now
+            </p>
+
+          </div>
+
+        </div>
+
+      ))}
+
+    </div>
+
+  )}
+
+</section>
           </div>
 
         </main>
@@ -362,19 +342,21 @@ export default function InstructorDashboard(){
   )
 }
 
-function CreateNewButton(){
+function CreateNewButton() {
 
-  const navigate = useNavigate()
+  const navigate =
+    useNavigate()
 
   return (
 
     <button
-      onClick={() => navigate('/create-course')}
-      className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-blue-700 transition"
+      onClick={() =>
+        navigate('/create-course')
+      }
+      className="bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700"
     >
       + Create New
     </button>
 
   )
 }
-

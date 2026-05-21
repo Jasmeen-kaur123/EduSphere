@@ -113,6 +113,26 @@ export default function CourseDetail(){
     }
   }
 
+  const isYoutubeVideo =
+    currentLesson?.videoUrl?.includes('youtube.com') ||
+    currentLesson?.videoUrl?.includes('youtu.be')
+
+  const getYoutubeEmbedUrl = (url) => {
+
+    if(url.includes('watch?v=')){
+      return url.replace('watch?v=', 'embed/')
+    }
+
+    if(url.includes('youtu.be/')){
+      return url.replace(
+        'youtu.be/',
+        'www.youtube.com/embed/'
+      )
+    }
+
+    return url
+  }
+
   return (
 
     <div className="min-h-screen bg-gray-100">
@@ -148,117 +168,130 @@ export default function CourseDetail(){
 
                   {currentLesson?.videoUrl ? (
 
-                    <>
-                      <video
-                        ref={videoRef}
-                        key={currentLesson.videoUrl}
-                        src={currentLesson.videoUrl}
-                        className="w-full h-full object-cover"
-                        controls={false}
-                        onPlay={() => setIsPlaying(true)}
-                        onPause={() => setIsPlaying(false)}
-                        onTimeUpdate={(e) => {
-                          setCurrentTime(e.target.currentTime)
-                        }}
-                        onLoadedMetadata={(e) => {
-                          setDurationTime(e.target.duration)
-                        }}
+                    isYoutubeVideo ? (
+
+                      <iframe
+                        className="w-full h-full"
+                        src={getYoutubeEmbedUrl(currentLesson.videoUrl)}
+                        title="Course Video"
+                        allowFullScreen
                       />
 
-                      {!isPlaying && (
+                    ) : (
 
-                        <button
-                          onClick={() => videoRef.current.play()}
-                          className="absolute inset-0 flex items-center justify-center"
-                        >
-                          <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-2xl">
+                      <>
+                        <video
+                          ref={videoRef}
+                          key={currentLesson.videoUrl}
+                          src={currentLesson.videoUrl}
+                          className="w-full h-full object-cover"
+                          controls={false}
+                          onPlay={() => setIsPlaying(true)}
+                          onPause={() => setIsPlaying(false)}
+                          onTimeUpdate={(e) => {
+                            setCurrentTime(e.target.currentTime)
+                          }}
+                          onLoadedMetadata={(e) => {
+                            setDurationTime(e.target.duration)
+                          }}
+                        />
 
-                            <svg
-                              width="40"
-                              height="40"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                            >
-                              <path
-                                d="M8 5v14l11-7L8 5z"
-                                fill="#111827"
-                              />
-                            </svg>
-
-                          </div>
-                        </button>
-
-                      )}
-
-                      {/* CONTROLS */}
-
-                      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
-
-                        <div className="flex items-center gap-4">
+                        {!isPlaying && (
 
                           <button
-                            onClick={() => {
-                              if(isPlaying){
-                                videoRef.current.pause()
-                              }else{
-                                videoRef.current.play()
-                              }
-                            }}
-                            className="text-white"
+                            onClick={() => videoRef.current.play()}
+                            className="absolute inset-0 flex items-center justify-center"
                           >
-                            {isPlaying ? '⏸' : '▶'}
+                            <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-2xl">
+
+                              <svg
+                                width="40"
+                                height="40"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                              >
+                                <path
+                                  d="M8 5v14l11-7L8 5z"
+                                  fill="#111827"
+                                />
+                              </svg>
+
+                            </div>
                           </button>
 
-                          <div
-                            className="flex-1 h-2 bg-gray-600 rounded-full overflow-hidden cursor-pointer"
-                            onClick={(e) => {
+                        )}
 
-                              const rect = e.currentTarget.getBoundingClientRect()
+                        {/* CONTROLS */}
 
-                              const pct =
-                                (e.clientX - rect.left) / rect.width
+                        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
 
-                              const time = pct * durationTime
+                          <div className="flex items-center gap-4">
 
-                              if(!isNaN(time)){
-                                videoRef.current.currentTime = time
-                              }
-                            }}
-                          >
+                            <button
+                              onClick={() => {
+                                if(isPlaying){
+                                  videoRef.current.pause()
+                                }else{
+                                  videoRef.current.play()
+                                }
+                              }}
+                              className="text-white"
+                            >
+                              {isPlaying ? '⏸' : '▶'}
+                            </button>
 
                             <div
-                              className="h-full bg-blue-500"
-                              style={{
-                                width: durationTime
-                                  ? `${(currentTime / durationTime) * 100}%`
-                                  : '0%'
+                              className="flex-1 h-2 bg-gray-600 rounded-full overflow-hidden cursor-pointer"
+                              onClick={(e) => {
+
+                                const rect = e.currentTarget.getBoundingClientRect()
+
+                                const pct =
+                                  (e.clientX - rect.left) / rect.width
+
+                                const time = pct * durationTime
+
+                                if(!isNaN(time)){
+                                  videoRef.current.currentTime = time
+                                }
                               }}
-                            />
+                            >
+
+                              <div
+                                className="h-full bg-blue-500"
+                                style={{
+                                  width: durationTime
+                                    ? `${(currentTime / durationTime) * 100}%`
+                                    : '0%'
+                                }}
+                              />
+
+                            </div>
+
+                            <div className="text-white text-sm">
+
+                              {formatTime(currentTime)} / {formatTime(durationTime)}
+
+                            </div>
+
+                            <button
+                              onClick={() => {
+
+                                if(videoRef.current.requestFullscreen){
+                                  videoRef.current.requestFullscreen()
+                                }
+                              }}
+                              className="text-white"
+                            >
+                              ⛶
+                            </button>
 
                           </div>
-
-                          <div className="text-white text-sm">
-
-                            {formatTime(currentTime)} / {formatTime(durationTime)}
-
-                          </div>
-
-                          <button
-                            onClick={() => {
-
-                              if(videoRef.current.requestFullscreen){
-                                videoRef.current.requestFullscreen()
-                              }
-                            }}
-                            className="text-white"
-                          >
-                            ⛶
-                          </button>
 
                         </div>
+                      </>
 
-                      </div>
-                    </>
+                    )
 
                   ) : (
 
@@ -398,4 +431,3 @@ export default function CourseDetail(){
     </div>
   )
 }
-

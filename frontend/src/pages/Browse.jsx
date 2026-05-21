@@ -51,7 +51,26 @@ export default function Browse(){
         const [cs, my] = await Promise.all([api.fetchCourses(), api.fetchMyCourses()])
         const coursesList = Array.isArray(cs) ? cs : []
         // my may be array of { course, completedLessons } or simple course objects
-        const enrolledIds = new Set((Array.isArray(my) ? my.map(x => x && x.course ? (x.course._id || x.course) : (x._id || x)) : []).map(id => String(id)))
+        const enrolledIds = new Set(
+
+  (Array.isArray(my) ? my : [])
+
+    .map(x => {
+
+      if (x.course?._id) {
+        return String(x.course._id)
+      }
+
+      if (x._id) {
+        return String(x._id)
+      }
+
+      return null
+    })
+
+    .filter(Boolean)
+
+)
         if(mounted){
           setCourses(coursesList)
           setEnrolledIds(enrolledIds)
@@ -86,7 +105,26 @@ export default function Browse(){
                     // refresh enrollment state when enrollment completes
                     try{
                       const my = await api.fetchMyCourses()
-                      const newSet = new Set((Array.isArray(my) ? my.map(x => x && x.course ? (x.course._id || x.course) : (x._id || x)) : []).map(id => String(id)))
+                      const newSet = new Set(
+
+  (Array.isArray(my) ? my : [])
+
+    .map(x => {
+
+      if (x.course?._id) {
+        return String(x.course._id)
+      }
+
+      if (x._id) {
+        return String(x._id)
+      }
+
+      return null
+    })
+
+    .filter(Boolean)
+
+)
                       setEnrolledIds(newSet)
                     }catch(e){ console.error('refresh enrolled ids failed', e) }
                   }} />

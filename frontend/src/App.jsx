@@ -1,5 +1,7 @@
+import InstructorCourses from './pages/InstructorCourses'
 import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
+
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import InstructorDashboard from './pages/InstructorDashboard'
@@ -26,6 +28,14 @@ export default function App(){
       <Route path="/grades" element={<ProtectedRoute allowedRoles={["student"]}><Grades/></ProtectedRoute>} />
       <Route path="/schedule" element={<ProtectedRoute allowedRoles={["student"]}><Schedule/></ProtectedRoute>} />
       <Route path="/instructor" element={<ProtectedRoute allowedRoles={["instructor"]}><InstructorDashboard/></ProtectedRoute>} />
+      <Route
+  path="/instructor/courses"
+  element={
+    <ProtectedRoute allowedRoles={["instructor"]}>
+      <InstructorCourses/>
+    </ProtectedRoute>
+  }
+/>
       <Route path="/create-course" element={<ProtectedRoute allowedRoles={["instructor"]}><CreateCourse/></ProtectedRoute>} />
       <Route path="/instructor/students" element={<ProtectedRoute allowedRoles={["instructor"]}><InstructorStudents/></ProtectedRoute>} />
       <Route path="/assignments" element={<ProtectedRoute allowedRoles={["student"]}><Assignments/></ProtectedRoute>} />

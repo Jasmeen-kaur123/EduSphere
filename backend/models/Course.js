@@ -4,6 +4,10 @@ const mongoose = require("mongoose");
 const courseSchema = new mongoose.Schema({
   title: String,
   description: String,
+  duration: {
+  type: String,
+  default: ''
+},
   instructor: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User"

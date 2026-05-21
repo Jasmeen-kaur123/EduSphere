@@ -26,7 +26,11 @@ export default function Login(){
           localStorage.setItem('token', data.token)
           localStorage.setItem('role', role)
           try{
-            const profileRes = await fetch('http://localhost:5000/api/auth/me', { headers: { 'Authorization': data.token } })
+            const profileRes = await fetch('http://localhost:5000/api/auth/me', { headers: {
+
+  'Authorization': `Bearer ${data.token}`
+
+} })
             const profile = await profileRes.json()
             localStorage.setItem('profile', JSON.stringify(profile))
           }catch(e){

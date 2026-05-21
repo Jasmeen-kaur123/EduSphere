@@ -16,6 +16,7 @@ exports.createCourse = async (req, res) => {
     const course = await Course.create({
       title,
       description,
+      duration: req.body.duration,
       instructor: req.user.id,
       lessons: normalizedLessons,
       // optional fields (will be ignored by schema if not present)
@@ -37,6 +38,28 @@ exports.getCourses = async (req, res) => {
   const courses = await Course.find().populate("instructor", "name");
   res.json(courses);
 };
+
+exports.getInstructorCourses = async (req, res) => {
+
+  try {
+
+    const courses = await Course.find({
+
+      instructor: req.user.id
+
+    })
+
+    res.json(courses)
+
+  } catch (err) {
+
+    console.error(err)
+
+    res.status(500).json({
+      message: 'Server error'
+    })
+  }
+}
 
 // Instructor can update course (e.g., add lessons)
 exports.updateCourse = async (req, res) => {
@@ -62,5 +85,31 @@ exports.updateCourse = async (req, res) => {
   }catch(err){
     console.error('UpdateCourse error', err)
     return res.status(500).json({ message: 'Failed to update course', error: err.message })
+  }
+}
+
+exports.getInstructorCourses = async (req, res) => {
+
+  try {
+
+    const courses = await Course.find({
+
+      instructor: req.user._id
+
+    }).populate('instructor', 'name')
+
+
+
+    return res.json(courses)
+
+  } catch (err) {
+
+    console.error(err)
+
+    return res.status(500).json({
+
+      message: 'Server error'
+
+    })
   }
 }

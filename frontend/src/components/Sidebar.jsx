@@ -37,7 +37,7 @@ export default function Sidebar(){
                 <NavLink to="/instructor" className={({isActive}) => isActive ? 'bg-blue-50 text-blue-600 rounded-lg px-3 py-2 block' : 'px-3 py-2 rounded-lg hover:bg-gray-100 block'}>Dashboard</NavLink>
               </li>
               <li>
-                <NavLink to="/instructor" className="px-3 py-2 rounded-lg hover:bg-gray-100 block">My Courses</NavLink>
+                <NavLink to="/instructor/courses" className="px-3 py-2 rounded-lg hover:bg-gray-100 block">My Courses</NavLink>
               </li>
               <li>
                 <NavLink to="/create-course" className={({isActive}) => isActive ? 'bg-blue-50 text-blue-600 rounded-lg px-3 py-2 block' : 'px-3 py-2 rounded-lg hover:bg-gray-100 block'}>Create Course</NavLink>

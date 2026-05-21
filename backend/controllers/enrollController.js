@@ -232,7 +232,8 @@ exports.completeLesson = async (req, res) => {
       completedLessons: ec.completedLessons
     })
 
-  }catch(err){
+  }
+  catch(err){
 
     console.error('CompleteLesson error', err)
 

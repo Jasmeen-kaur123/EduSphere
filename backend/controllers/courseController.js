@@ -5,8 +5,6 @@ const Course = require("../models/Course");
 exports.createCourse = async (req, res) => {
   try{
     const { title, description, lessons, category, level, price, duration } = req.body
-
-    // normalize lessons from instructor (frontend uses 'name' for lesson title)
     const normalizedLessons = Array.isArray(lessons) ? lessons.map(ls => ({
       title: ls.title || ls.name || 'Untitled',
       duration: ls.duration || ls.length || '',
@@ -18,7 +16,6 @@ exports.createCourse = async (req, res) => {
       description,
       instructor: req.user.id,
       lessons: normalizedLessons,
-      // optional fields (will be ignored by schema if not present)
       category,
       level,
       price,

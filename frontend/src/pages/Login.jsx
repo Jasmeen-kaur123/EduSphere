@@ -104,6 +104,7 @@ export default function Login(){
           <button type="submit" className="w-full mt-2 bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition">{isLogin ? 'Sign In →' : 'Create account'}</button>
         </form>
 
+        
         <p className="text-center text-sm text-gray-500 mt-5">
           {isLogin ? "Don't have an account?" : 'Already have an account?'}
           <button onClick={toggleForm} className="ml-2 text-blue-600 font-medium">{isLogin ? 'Sign Up' : 'Sign In'}</button>

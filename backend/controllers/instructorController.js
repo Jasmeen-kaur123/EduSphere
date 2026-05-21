@@ -1,5 +1,7 @@
 const User = require('../models/User')
 const Course = require('../models/Course')
+const Assignment = require('../models/Assignment')
+const Submission = require('../models/Submission')
 
 // GET /api/instructor/students
 const getStudents = async (req, res) => {
@@ -26,54 +28,67 @@ const getStudents = async (req, res) => {
       })
       .lean()
 
-    const out = students.map(student => {
-      const enrolledCourses = (student.enrolledCourses || []).filter(ec => {
-        const courseId = ec.course?._id || ec.course
+      const assignments = await Assignment.find().lean()
+    const out = await Promise.all(
+  students.map(async (student) => {
 
-        return courseIds.some(
-          id => String(id) === String(courseId)
-        )
-      })
+    const enrolledCourses = (student.enrolledCourses || []).filter(ec => {
+      const courseId = ec.course?._id || ec.course
 
-      const enrolledCount = enrolledCourses.length
-
-      let totalProgress = 0
-
-      enrolledCourses.forEach(ec => {
-        const completedLessons =
-          Array.isArray(ec.completedLessons)
-            ? ec.completedLessons.length
-            : 0
-
-        const totalLessons =
-          Array.isArray(ec.course?.lessons)
-            ? ec.course.lessons.length
-            : 0
-
-        const progress =
-          totalLessons > 0
-            ? (completedLessons / totalLessons) * 100
-            : 0
-
-        totalProgress += progress
-      })
-
-      const avgProgress =
-        enrolledCount > 0
-          ? Math.round(totalProgress / enrolledCount)
-          : 0
-
-      return {
-        _id: student._id,
-        name: student.name || 'Student',
-        email: student.email || '',
-        enrolledCount,
-        assignmentsSubmitted: 0,
-        avgProgress,
-        createdAt: student.createdAt
-      }
+      return courseIds.some(
+        id => String(id) === String(courseId)
+      )
     })
 
+    const enrolledCount = enrolledCourses.length
+
+    let totalProgress = 0
+
+    const submittedCount =
+      await Submission.countDocuments({
+        student: student._id,
+        status: {
+          $in: ['submitted', 'graded']
+        }
+      })
+
+    enrolledCourses.forEach(ec => {
+
+      const completedLessons =
+        Array.isArray(ec.completedLessons)
+          ? ec.completedLessons.length
+          : 0
+
+      const totalLessons =
+        Array.isArray(ec.course?.lessons)
+          ? ec.course.lessons.length
+          : 0
+
+      const progress =
+        totalLessons > 0
+          ? (completedLessons / totalLessons) * 100
+          : 0
+
+      totalProgress += progress
+
+    })
+
+    const avgProgress =
+      enrolledCount > 0
+        ? Math.round(totalProgress / enrolledCount)
+        : 0
+
+    return {
+      _id: student._id,
+      name: student.name || 'Student',
+      email: student.email || '',
+      enrolledCount,
+      assignmentsSubmitted: submittedCount,
+      avgProgress,
+      createdAt: student.createdAt
+    }
+  })
+)
     res.json(out)
 
   } catch (err) {

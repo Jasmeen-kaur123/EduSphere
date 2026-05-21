@@ -8,7 +8,10 @@ export default function InstructorDashboard(){
 
   const [courses, setCourses] = useState([])
   const [totalStudents, setTotalStudents] = useState(0)
+  const [assignments, setAssignments] = useState([])
   const [loading, setLoading] = useState(true)
+  const [recentStudentName, setRecentStudentName] =
+  useState('')
 
   useEffect(() => {
 
@@ -25,6 +28,29 @@ export default function InstructorDashboard(){
         // ALL STUDENTS
 
         const students = await api.fetchInstructorStudents()
+
+        if (
+  Array.isArray(students) &&
+  students.length > 0
+) {
+
+  setRecentStudentName(
+    students[0].name
+  )
+
+}
+
+        const totalAssignments =
+  assignments.length
+
+const pendingGrades =
+  assignments.filter(
+    a => a.pendingSubmissions > 0
+  ).reduce(
+    (sum, a) =>
+      sum + a.pendingSubmissions,
+    0
+  )
 
         // PROFILE
 
@@ -94,26 +120,17 @@ export default function InstructorDashboard(){
 
   const activeCourses = courses.length
 
-  // REVENUE
+  const totalAssignments =
+  assignments.length
 
-  const revenue = courses.reduce((sum, c) => {
-
-    return sum + Number(c.revenue || 0)
-
-  }, 0)
-
-  // AVG RATING
-
-  const avgRating =
-    courses.length > 0
-      ? (
-          courses.reduce(
-            (sum, c) =>
-              sum + Number(c.rating || 0),
-            0
-          ) / courses.length
-        ).toFixed(1)
-      : '0.0'
+const pendingGrades =
+  assignments.filter(
+    a => a.pendingSubmissions > 0
+  ).reduce(
+    (sum, a) =>
+      sum + a.pendingSubmissions,
+    0
+  )
 
   return (
 
@@ -201,10 +218,6 @@ export default function InstructorDashboard(){
                 {totalStudents}
               </div>
 
-              <div className="text-green-500 text-sm mt-2">
-                +{totalStudents} enrolled
-              </div>
-
             </div>
 
             {/* ACTIVE COURSES */}
@@ -219,47 +232,31 @@ export default function InstructorDashboard(){
                 {activeCourses}
               </div>
 
-              <div className="text-green-500 text-sm mt-2">
-                {activeCourses} published
-              </div>
-
             </div>
 
-            {/* REVENUE */}
+           <div className="bg-white rounded-2xl p-5 shadow-sm">
+
+  <div className="text-gray-500">
+    Total Assignments
+  </div>
+
+  <div className="text-3xl font-bold mt-3">
+    {totalAssignments}
+  </div>
+
+</div>
 
             <div className="bg-white rounded-2xl p-5 shadow-sm">
 
-              <div className="text-gray-500">
-                Revenue
-              </div>
+  <div className="text-gray-500">
+    Pending Grades
+  </div>
 
-              <div className="text-3xl font-bold mt-3">
-                ₹{(revenue / 1000).toFixed(1)}k
-              </div>
+  <div className="text-3xl font-bold mt-3">
+    {pendingGrades}
+  </div>
 
-              <div className="text-green-500 text-sm mt-2">
-                +₹18K this month
-              </div>
-
-            </div>
-
-            {/* RATING */}
-
-            <div className="bg-white rounded-2xl p-5 shadow-sm">
-
-              <div className="text-gray-500">
-                Avg. Rating
-              </div>
-
-              <div className="text-3xl font-bold mt-3">
-                {avgRating}
-              </div>
-
-              <div className="text-green-500 text-sm mt-2">
-                Excellent
-              </div>
-
-            </div>
+</div>
 
           </div>
 
@@ -312,10 +309,6 @@ export default function InstructorDashboard(){
                         {c.title}
                       </div>
 
-                      <div className="text-gray-500 mt-1 text-sm">
-                        ⭐ {c.rating || 4.8}
-                      </div>
-
                     </div>
 
                     <span className="bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-medium">
@@ -334,23 +327,41 @@ export default function InstructorDashboard(){
 
             <section className="bg-white rounded-2xl p-6 shadow-sm">
 
-              <h2 className="text-2xl font-bold mb-6">
-                Recent Activity
-              </h2>
+  <h2 className="text-2xl font-bold mb-6">
+    Recent Activity
+  </h2>
 
-              <div className="border rounded-2xl p-5">
+  {totalStudents > 0 ? (
 
-                <div className="text-lg font-medium">
-                  New enrollment: Manjot
-                </div>
+    <div className="flex items-center gap-4">
 
-                <div className="text-gray-400 mt-1 text-sm">
-                  just now
-                </div>
+      <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
+        📚
+      </div>
 
-              </div>
+      <div>
 
-            </section>
+        <div className="text-xl font-medium">
+          New enrollment: {recentStudentName}
+        </div>
+
+        <div className="text-gray-400">
+          Just now
+        </div>
+
+      </div>
+
+    </div>
+
+  ) : (
+
+    <div className="text-gray-500">
+      No recent activity
+    </div>
+
+  )}
+
+</section>
 
           </div>
 

@@ -39,6 +39,10 @@ async function start() {
       const instructorRoutes =
   require('./routes/instructorRoutes')
       app.use("/api/instructor", instructorRoutes);
+      app.use(
+  "/uploads",
+  express.static("uploads")
+)
 
     // Simple API root for quick checks from a browser
     app.get('/', (req, res) => {

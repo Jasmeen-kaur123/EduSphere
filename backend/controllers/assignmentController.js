@@ -194,8 +194,10 @@ exports.submitAssignment = async (req, res) => {
     submission.answer =
       req.body.answer || ''
 
-    submission.fileUrl =
-      req.body.fileUrl || ''
+    if (req.file) {
+  submission.fileUrl =
+    `/uploads/${req.file.filename}`
+}
 
     submission.status = 'submitted'
 

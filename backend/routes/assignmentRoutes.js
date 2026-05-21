@@ -56,5 +56,15 @@ router.post(
 )
 
 
+const upload =
+require("../middleware/upload")
+
+router.post(
+  "/:id/submit",
+  protect,
+  upload.single("file"),
+  submitAssignment
+)
+
 
 module.exports = router
